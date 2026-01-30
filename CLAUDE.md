@@ -61,6 +61,8 @@ src/
 ```bash
 # .env.local (never committed)
 BALLDONTLIE_API_KEY=your_key_here
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key_here
 ```
 
 Server-side only (no `VITE_` prefix). Add to Vercel dashboard for production.
@@ -98,6 +100,41 @@ You MUST use this tool whenever writing Svelte code before sending it to the use
 #### 4. playground-link
 Generates a Svelte Playground link with the provided code.
 After completing the code, ask the user if they want a playground link. Only call this tool after user confirmation and NEVER if code was written to files in their project.
+
+## Supabase MCP Server
+
+You have access to the Supabase MCP server for direct database management.
+
+**Project:** dennysdata (`rwzhinwyohngxvatahvg`)
+
+### Database Schema
+
+```sql
+-- Cache tables for API responses
+games_cache (id INT PK, date DATE, data JSONB, cached_at TIMESTAMPTZ)
+box_scores_cache (game_id INT PK, data JSONB, cached_at TIMESTAMPTZ)
+```
+
+### Available MCP Tools:
+
+- `list_projects` - List all Supabase projects
+- `list_tables` - View tables and schema
+- `apply_migration` - Run DDL (CREATE, ALTER, etc.)
+- `execute_sql` - Run queries (SELECT, INSERT, etc.)
+- `get_logs` - View service logs for debugging
+
+### Usage Examples
+
+```
+# Create a new table
+mcp__supabase__apply_migration(project_id, name, query)
+
+# Insert/query data
+mcp__supabase__execute_sql(project_id, query)
+
+# Check table structure
+mcp__supabase__list_tables(project_id, schemas: ["public"])
+```
 
 ## Workflow
 

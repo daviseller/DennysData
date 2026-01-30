@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "svelte": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sveltejs/mcp"
+      ],
+      "env": {}
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp"
+    }
+  }
+}

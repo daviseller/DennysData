@@ -1,9 +1,25 @@
 import { json, error } from '@sveltejs/kit';
 import { BALLDONTLIE_API_KEY } from '$env/static/private';
+import { supabase } from '$lib/supabase';
 import type { RequestHandler } from './$types';
 import type { StatsResponse, Game, PlayerStats, BoxScore, TeamTotals } from '$lib/types';
 
 const API_BASE = 'https://api.balldontlie.io/v1';
+const CACHE_TTL_RECENT = 5 * 60 * 1000; // 5 minutes for recent games
+
+function isGameFinal(game: Game): boolean {
+	return game.status === 'Final';
+}
+
+function isCacheValid(cachedAt: string, game: Game): boolean {
+	// Final games are always valid
+	if (isGameFinal(game)) {
+		return true;
+	}
+	// In-progress/recent games valid for 5 minutes
+	const cacheTime = new Date(cachedAt).getTime();
+	return Date.now() - cacheTime < CACHE_TTL_RECENT;
+}
 
 export const GET: RequestHandler = async ({ params, fetch }) => {
 	const apiKey = BALLDONTLIE_API_KEY;
@@ -18,7 +34,23 @@ export const GET: RequestHandler = async ({ params, fetch }) => {
 		throw error(400, 'Invalid game ID');
 	}
 
+	const gameIdNum = parseInt(gameId, 10);
+
 	try {
+		// Check cache first
+		const { data: cached } = await supabase
+			.from('box_scores_cache')
+			.select('data, cached_at')
+			.eq('game_id', gameIdNum)
+			.single();
+
+		if (cached) {
+			const boxScore = cached.data as { data: BoxScore };
+			if (isCacheValid(cached.cached_at, boxScore.data.game)) {
+				return json(boxScore);
+			}
+		}
+
 		// Fetch game details and stats in parallel
 		const [gameResponse, statsResponse] = await Promise.all([
 			fetch(`${API_BASE}/games/${gameId}`, {
@@ -69,7 +101,21 @@ export const GET: RequestHandler = async ({ params, fetch }) => {
 			}
 		};
 
-		return json({ data: boxScore });
+		const responseData = { data: boxScore };
+
+		// Cache if game is final
+		if (isGameFinal(game)) {
+			await supabase.from('box_scores_cache').upsert(
+				{
+					game_id: gameIdNum,
+					data: responseData,
+					cached_at: new Date().toISOString()
+				},
+				{ onConflict: 'game_id' }
+			);
+		}
+
+		return json(responseData);
 	} catch (err) {
 		// Re-throw SvelteKit errors
 		if (err && typeof err === 'object' && 'status' in err) {
