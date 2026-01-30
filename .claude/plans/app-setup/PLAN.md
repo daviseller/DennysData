@@ -3,7 +3,7 @@
 ## Overview
 
 **Goal:** NBA box scores website - browse games by date, view detailed stats
-**Status:** In Progress
+**Status:** In Progress (70%)
 **Created:** 2026-01-30
 
 ## Tech Stack
@@ -13,10 +13,8 @@
 - **Styling:** Pure CSS + design tokens
 - **Data Viz:** Layercake (Svelte-native, D3 foundation)
 - **API:** balldontlie.io (via server routes)
-- **Database:** Supabase (Phase 5 - caching)
+- **Database:** Supabase (caching)
 - **Hosting:** Vercel
-
-*Architecture can split to separate backend later if needed.*
 
 ## Design
 
@@ -26,23 +24,6 @@ See [design-system.md](design-system.md) for full details.
 - Sports broadcast aesthetic
 - Fonts: IBM Plex Sans (display) + IBM Plex Mono (stats)
 - Mobile-first, data-dense
-
-## MVP Scope
-
-### Day Picker
-- Default to today
-- Left/right arrows for quick navigation
-- Jump to specific date
-
-### Games List
-- All games for selected date
-- Teams, scores, game status
-- Click to view details
-
-### Game Details
-- Player stats table
-- Team stats summary
-- Back to day view
 
 ## Phases
 
@@ -73,13 +54,14 @@ See [design-system.md](design-system.md) for full details.
 - [x] Mobile accordion (inline box score below selected game)
 - [x] Game detail page route `/game/[id]`
 - [x] Request cancellation for rapid navigation
-- [x] Loading and error states
 
-### Phase 5: Caching & Polish
-- [ ] Supabase integration
-- [ ] Cache historical games
-- [ ] Loading/error states polish
-- [ ] Mobile optimization
+### Phase 5: Caching & Polish (In Progress)
+- [x] Supabase integration
+- [x] Cache historical games
+- [x] Cache box scores
+- [ ] Skeleton loading states
+- [ ] Better error messages
+- [ ] Keyboard navigation
 
 ### Phase 6: Data Viz (Future)
 - [ ] Layercake setup
@@ -95,30 +77,30 @@ See [design-system.md](design-system.md) for full details.
 ## Routes
 
 ```
-/                     # Day picker + games list
-/game/[id]            # Game details
-/api/games            # Server: fetch games by date
-/api/boxscore/[id]    # Server: fetch box score
+/                     # Day picker + games list + box score panel
+/game/[id]            # Game details (standalone)
+/api/games            # Server: fetch games by date (cached)
+/api/boxscore/[id]    # Server: fetch box score (cached)
 ```
 
-## API Reference
+## Database Schema
 
-**balldontlie.io**
-- Docs: https://docs.balldontlie.io
-- `GET /v1/games?dates[]=YYYY-MM-DD`
-- `GET /v1/box_scores?game_id={id}`
-- Rate limit: 30/min (free tier)
-- API key required (server-side only)
+```sql
+games_cache (id INT PK, date DATE, data JSONB, cached_at TIMESTAMPTZ)
+box_scores_cache (game_id INT PK, data JSONB, cached_at TIMESTAMPTZ)
+```
 
 ## Success Criteria
 
 - [x] Browse any date's games
 - [x] View player/team stats for any game
 - [x] Mobile-responsive
-- [ ] Deployed to Vercel (needs redeploy with Phase 4)
+- [x] Caching for faster loads
+- [ ] Deployed to Vercel (needs redeploy)
 - [ ] < 2s load times
 
 ## Links
 
 - Repo: https://github.com/daviseller/DennysData
+- Supabase: rwzhinwyohngxvatahvg
 - Design: [design-system.md](design-system.md)

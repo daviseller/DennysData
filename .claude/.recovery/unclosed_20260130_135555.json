@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-01-30T13:55:55.398971",
+  "event": "session_end_without_close",
+  "session_info": "**Session:** #2",
+  "active_md_snapshot": "# Currently Active\n\n**Plan:** app-setup\n**Session:** #2\n**Started:** 2026-01-30\n**Mode:** Developer\n\n## This Session\n\n**Objective:** Build the API integration layer to fetch NBA game data from balldontlie.io via secure server routes.\n\n### Tasks\n- [x] Create TypeScript types for API data\n- [x] Build server route: `/api/games`\n- [x] Build server route: `/api/boxscore/[id]`\n- [x] Create client fetch helper\n- [x] Add NBA team colors\n\n## Session Notes\n- Phase 2: API Integration\n- All 5 tasks completed\n- Build verified successful\n",
+  "warning": "Session ended without /workflow:session-end. Run /workflow:health on next session."
+}

@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-01-30T14:23:33.819295",
+  "event": "session_end_without_close",
+  "session_info": "**Session:** #3",
+  "active_md_snapshot": "# Currently Active\n\n**Plan:** app-setup\n**Session:** #3\n**Started:** 2026-01-30\n**Mode:** Developer\n\n## This Session\n\n**Objective:** Build day picker and games list components with live API integration.\n\n### Tasks\n- [ ] DayPicker.svelte\n- [ ] GameCard.svelte\n- [ ] GamesList.svelte\n- [ ] Wire up home page\n\n## Session Notes\n- Starting Phase 3 implementation\n\n\n## Session Status\n\n- 2026-01-30T14:21:41.004316: Session ended without proper close (recovery saved)",
+  "warning": "Session ended without /workflow:session-end. Run /workflow:health on next session."
+}

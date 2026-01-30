@@ -1,66 +1,48 @@
 # Next Session: app-setup
 
-## Focus: Phase 5 - Caching & Polish
+## Focus: Phase 5 Completion - Polish & UX
 
 ### Objectives
 
-1. Set up Supabase for caching historical games
-2. Implement cache layer for API responses
-3. Polish loading/error states
-4. Mobile optimization refinements
+1. Add skeleton loading states
+2. Improve error messages
+3. Add keyboard navigation to day picker
+4. Optional: Auto-refresh for live games
 
-### Pre-Session Checklist
+### Carry-Forward Tasks
 
-- [ ] Supabase project created
-- [ ] Database schema designed
-- [ ] Environment variables configured
+These were planned but not completed in Session 5:
 
-### Database Schema Ideas
+- [ ] Skeleton loaders for game cards and box score
+- [ ] Better error messages with retry options
+- [ ] Keyboard navigation for day picker (arrow keys)
 
-```sql
--- Games cache
-CREATE TABLE games (
-  id INT PRIMARY KEY,          -- balldontlie game ID
-  date DATE NOT NULL,
-  home_team_id INT NOT NULL,
-  visitor_team_id INT NOT NULL,
-  home_team_score INT,
-  visitor_team_score INT,
-  status TEXT NOT NULL,
-  period INT,
-  time TEXT,
-  data JSONB NOT NULL,         -- Full API response
-  cached_at TIMESTAMPTZ DEFAULT NOW()
-);
+### Implementation Ideas
 
--- Box scores cache
-CREATE TABLE box_scores (
-  game_id INT PRIMARY KEY,
-  data JSONB NOT NULL,         -- Full API response
-  cached_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Indexes
-CREATE INDEX games_date_idx ON games(date);
-CREATE INDEX box_scores_game_id_idx ON box_scores(game_id);
+#### Skeleton Loaders
+```svelte
+<!-- GameCardSkeleton.svelte -->
+<div class="skeleton-card">
+  <div class="skeleton-line short"></div>
+  <div class="skeleton-line"></div>
+  <div class="skeleton-line short"></div>
+</div>
 ```
 
-### Cache Strategy
-
-1. **Historical games** (> 24h old): Cache indefinitely
-2. **Recent games** (< 24h old): Cache for 5 min
-3. **Live games**: No cache, fetch fresh
-
-### Polish Items
-
-- [ ] Skeleton loading states
-- [ ] Stale-while-revalidate pattern
-- [ ] Better error messages
-- [ ] Empty state illustrations
-- [ ] Keyboard navigation for day picker
+#### Keyboard Navigation
+- Left/Right arrows: change date
+- Escape: close box score panel
+- Up/Down: navigate game list
 
 ### Optional Enhancements
 
-- Auto-refresh for live games (30s interval)
+- Auto-refresh for live games (30s polling)
 - Quarter-by-quarter scoring breakdown
-- Calendar picker for date jumping
+- Calendar picker for jumping to specific dates
+- Stale-while-revalidate pattern for smoother UX
+
+### Context
+
+- Supabase caching is working (games_cache, box_scores_cache)
+- Cache populates as users browse
+- Project ID: `rwzhinwyohngxvatahvg`

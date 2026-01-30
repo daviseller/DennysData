@@ -1,0 +1,5 @@
+{
+  "timestamp": "2026-01-30T14:53:45.134931",
+  "event": "pre_compaction",
+  "active_md_content": "# Currently Active\n\n**Plan:** app-setup\n**Session:** #4\n**Started:** 2026-01-30T10:00:00Z\n**Mode:** Developer\n\n## This Session\n\n**Objective:** Build game detail page with player stats tables and team totals comparison.\n\n### Tasks\n- [ ] Game detail page (`/game/[id]/+page.svelte`)\n- [ ] StatsTable component (sortable player stats)\n- [ ] TeamTotals component (team comparison)\n- [ ] Loading/error states\n- [ ] Back navigation\n\n## Session Notes\n- Box score API ready at `/api/boxscore/[id]`\n- Types already defined in `$lib/types.ts`\n\n\n## Session Status\n\n- 2026-01-30T14:41:09.952045: Session ended without proper close (recovery saved)\n- 2026-01-30T14:46:13.926565: Session ended without proper close (recovery saved)\n- 2026-01-30T14:49:50.060263: Session ended without proper close (recovery saved)"
+}

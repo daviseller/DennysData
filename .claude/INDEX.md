@@ -6,7 +6,7 @@
 
 | Plan | Status | Progress | Last Worked | Description |
 |------|--------|----------|-------------|-------------|
-| [app-setup](plans/app-setup/PLAN.md) | In Progress | 60% | 2026-01-30 | NBA box scores site - Bun + SvelteKit + Vercel |
+| [app-setup](plans/app-setup/PLAN.md) | In Progress | 70% | 2026-01-30 | NBA box scores site - Bun + SvelteKit + Vercel |
 
 ## Quick Reference
 
