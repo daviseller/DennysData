@@ -69,7 +69,7 @@
 		</span>
 	</div>
 
-	<div class="game-teams">
+	<div class="game-teams" class:has-result={status !== 'scheduled'}>
 		<div class="team-row" class:winner={winner === 'visitor'}>
 			<span class="team-color" style="background: {visitorColors.primary}"></span>
 			<span class="team-abbr">{game.visitor_team.abbreviation}</span>
@@ -189,8 +189,9 @@
 		color: var(--text-primary);
 	}
 
-	.team-row:not(.winner) .team-abbr {
-		color: var(--text-secondary);
+	/* Only mute losing team when game has a result */
+	.has-result .team-row:not(.winner) .team-abbr {
+		color: var(--text-muted);
 	}
 
 	.score {
@@ -201,6 +202,11 @@
 		color: var(--text-secondary);
 		min-width: 32px;
 		text-align: right;
+	}
+
+	/* Only mute losing score when game has a result */
+	.has-result .score:not(.stat-leader) {
+		color: var(--text-muted);
 	}
 
 	.score.stat-leader {

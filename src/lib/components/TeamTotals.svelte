@@ -88,21 +88,11 @@
 		}
 	]);
 
-	function getBarWidths(homeRaw: number, visitorRaw: number, label: string): { home: number; visitor: number } {
-		// For turnovers, lower is better - invert the comparison
-		const invertComparison = label === 'TO';
-		const total = homeRaw + visitorRaw;
-
-		if (total === 0) return { home: 50, visitor: 50 };
-
-		let homeWidth = (homeRaw / total) * 100;
-		let visitorWidth = (visitorRaw / total) * 100;
-
-		// Ensure minimum visible width
-		if (homeWidth > 0 && homeWidth < 10) homeWidth = 10;
-		if (visitorWidth > 0 && visitorWidth < 10) visitorWidth = 10;
-
-		return { home: homeWidth, visitor: visitorWidth };
+	function getBarWidth(value: number, otherValue: number): number {
+		const max = Math.max(value, otherValue);
+		if (max === 0) return 0;
+		// Scale to percentage of the half (max gets 100% of its half)
+		return (value / max) * 100;
 	}
 
 	function getWinner(homeRaw: number, visitorRaw: number, label: string): 'home' | 'visitor' | 'tie' {
@@ -133,26 +123,29 @@
 
 	<div class="totals-body">
 		{#each stats as stat (stat.label)}
-			{@const widths = getBarWidths(stat.homeRaw, stat.visitorRaw, stat.label)}
+			{@const visitorWidth = getBarWidth(stat.visitorRaw, stat.homeRaw)}
+			{@const homeWidth = getBarWidth(stat.homeRaw, stat.visitorRaw)}
 			{@const winner = getWinner(stat.homeRaw, stat.visitorRaw, stat.label)}
 			<div class="stat-row">
 				<div class="stat-value visitor" class:winner={winner === 'visitor'}>
 					{stat.visitorVal}
 				</div>
-				<div class="stat-bar-container">
-					<div class="stat-bars">
+				<div class="stat-bars">
+					<div class="bar-half visitor">
 						<div
-							class="bar visitor"
+							class="bar"
 							class:winner={winner === 'visitor'}
-							style="width: {widths.visitor}%; background: {visitorColor}"
-						></div>
-						<div
-							class="bar home"
-							class:winner={winner === 'home'}
-							style="width: {widths.home}%; background: {homeColor}"
+							style="width: {visitorWidth}%; background: {visitorColor}"
 						></div>
 					</div>
 					<span class="stat-label">{stat.label}</span>
+					<div class="bar-half home">
+						<div
+							class="bar"
+							class:winner={winner === 'home'}
+							style="width: {homeWidth}%; background: {homeColor}"
+						></div>
+					</div>
 				</div>
 				<div class="stat-value home" class:winner={winner === 'home'}>
 					{stat.homeVal}
@@ -241,11 +234,11 @@
 	}
 
 	.stat-value.visitor {
-		text-align: left;
+		text-align: right;
 	}
 
 	.stat-value.home {
-		text-align: right;
+		text-align: left;
 	}
 
 	.stat-value.winner {
@@ -253,49 +246,50 @@
 		font-weight: 600;
 	}
 
-	.stat-bar-container {
+	.stat-bars {
 		flex: 1;
-		position: relative;
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
 	}
 
-	.stat-bars {
+	.bar-half {
+		flex: 1;
+		height: 8px;
 		display: flex;
-		height: 6px;
-		gap: 2px;
+		background: var(--bg-inset);
 		border-radius: 1px;
 		overflow: hidden;
 	}
 
+	.bar-half.visitor {
+		justify-content: flex-end;
+	}
+
+	.bar-half.home {
+		justify-content: flex-start;
+	}
+
 	.bar {
 		height: 100%;
-		opacity: 0.4;
+		opacity: 0.5;
 		transition: opacity var(--transition-fast);
-	}
-
-	.bar.visitor {
-		border-radius: 1px 0 0 1px;
-	}
-
-	.bar.home {
-		border-radius: 0 1px 1px 0;
+		border-radius: 1px;
 	}
 
 	.bar.winner {
-		opacity: 0.8;
+		opacity: 0.9;
 	}
 
 	.stat-label {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
 		font-family: var(--font-stats);
 		font-size: 10px;
 		font-weight: 500;
 		letter-spacing: 0.03em;
 		color: var(--text-muted);
-		background: var(--bg-card);
-		padding: 0 var(--space-xs);
+		min-width: 32px;
+		text-align: center;
+		flex-shrink: 0;
 	}
 
 	@media (max-width: 640px) {
@@ -306,6 +300,11 @@
 
 		.stat-label {
 			font-size: 9px;
+			min-width: 28px;
+		}
+
+		.bar-half {
+			height: 6px;
 		}
 	}
 </style>

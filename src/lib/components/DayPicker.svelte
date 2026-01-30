@@ -29,9 +29,41 @@
 		onDateChange(next);
 	}
 
+	function goToToday() {
+		onDateChange(new Date());
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		switch (e.key) {
+			case 'ArrowLeft':
+				e.preventDefault();
+				goToPreviousDay();
+				break;
+			case 'ArrowRight':
+				e.preventDefault();
+				goToNextDay();
+				break;
+			case 't':
+			case 'T':
+				if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+					e.preventDefault();
+					goToToday();
+				}
+				break;
+		}
+	}
+
+	const isToday = $derived.by(() => {
+		const today = new Date();
+		return (
+			selectedDate.getDate() === today.getDate() &&
+			selectedDate.getMonth() === today.getMonth() &&
+			selectedDate.getFullYear() === today.getFullYear()
+		);
+	});
 </script>
 
-<div class="day-picker" role="group" aria-label="Date navigation">
+<div class="day-picker" role="toolbar" aria-label="Date navigation" tabindex="-1" onkeydown={handleKeydown}>
 	<button
 		class="nav-btn"
 		onclick={goToPreviousDay}
@@ -42,9 +74,16 @@
 		</svg>
 	</button>
 
-	<span class="date-display">
-		{formatDisplayDate(selectedDate)}
-	</span>
+	<div class="date-container">
+		<span class="date-display">
+			{formatDisplayDate(selectedDate)}
+		</span>
+		{#if !isToday}
+			<button class="today-btn" onclick={goToToday}>
+				TODAY
+			</button>
+		{/if}
+	</div>
 
 	<button
 		class="nav-btn"
@@ -92,13 +131,49 @@
 		background: var(--bg-card-hover);
 	}
 
-	.date-display {
+	.nav-btn:focus-visible {
+		outline: 2px solid var(--accent-primary);
+		outline-offset: 2px;
+	}
+
+	.date-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-xs);
 		min-width: 180px;
+	}
+
+	.date-display {
 		font-family: var(--font-stats);
 		font-size: 14px;
 		font-weight: 600;
 		letter-spacing: 0.05em;
 		color: var(--text-primary);
 		text-align: center;
+	}
+
+	.today-btn {
+		padding: 2px var(--space-sm);
+		font-family: var(--font-stats);
+		font-size: 10px;
+		font-weight: 500;
+		letter-spacing: 0.03em;
+		color: var(--accent-primary);
+		background: transparent;
+		border: 1px solid var(--accent-primary);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: background var(--transition-fast), color var(--transition-fast);
+	}
+
+	.today-btn:hover {
+		background: var(--accent-primary);
+		color: white;
+	}
+
+	.today-btn:focus-visible {
+		outline: 2px solid var(--accent-primary);
+		outline-offset: 2px;
 	}
 </style>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Game } from '$lib/types';
 	import GameCard from './GameCard.svelte';
+	import GameCardSkeleton from './GameCardSkeleton.svelte';
 	import BoxScorePanel from './BoxScorePanel.svelte';
 
 	interface Props {
@@ -9,36 +10,83 @@
 		error: string | null;
 		selectedGameId?: number | null;
 		onSelectGame?: (game: Game) => void;
+		onRetry?: () => void;
 	}
 
-	let { games, loading, error, selectedGameId = null, onSelectGame }: Props = $props();
+	let { games, loading, error, selectedGameId = null, onSelectGame, onRetry }: Props = $props();
 
 	function handleGameSelect(game: Game) {
 		if (onSelectGame) {
-			// Toggle off if clicking the same game
-			if (selectedGameId === game.id) {
-				// We need a way to deselect - pass null somehow
-				// For now, just call with the same game and let parent handle it
-			}
 			onSelectGame(game);
 		}
 	}
+
+	function getErrorMessage(error: string): { title: string; description: string } {
+		if (error.includes('fetch') || error.includes('network') || error.includes('Failed')) {
+			return {
+				title: 'CONNECTION ERROR',
+				description: 'Unable to reach the server. Check your internet connection.'
+			};
+		}
+		if (error.includes('timeout') || error.includes('Timeout')) {
+			return {
+				title: 'REQUEST TIMEOUT',
+				description: 'The server took too long to respond. Try again.'
+			};
+		}
+		if (error.includes('500') || error.includes('Server')) {
+			return {
+				title: 'SERVER ERROR',
+				description: 'Something went wrong on our end. Try again in a moment.'
+			};
+		}
+		if (error.includes('404') || error.includes('not found')) {
+			return {
+				title: 'NOT FOUND',
+				description: 'The requested data could not be found.'
+			};
+		}
+		if (error.includes('429') || error.includes('rate')) {
+			return {
+				title: 'RATE LIMITED',
+				description: 'Too many requests. Please wait a moment and try again.'
+			};
+		}
+		return {
+			title: 'ERROR',
+			description: error
+		};
+	}
+
+	const errorInfo = $derived(error ? getErrorMessage(error) : null);
 </script>
 
 {#if loading}
-	<div class="loading-state">
-		<div class="loading-spinner"></div>
-		<span class="loading-text">LOADING GAMES</span>
+	<div class="games-list skeleton-grid">
+		{#each Array(6) as _, i}
+			<GameCardSkeleton />
+		{/each}
 	</div>
 {:else if error}
 	<div class="error-state">
 		<span class="error-icon">!</span>
-		<span class="error-text">{error}</span>
+		<span class="error-title">{errorInfo?.title}</span>
+		<span class="error-description">{errorInfo?.description}</span>
+		{#if onRetry}
+			<button class="retry-btn" onclick={onRetry}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M1 4v6h6M23 20v-6h-6"/>
+					<path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+				</svg>
+				RETRY
+			</button>
+		{/if}
 	</div>
 {:else if games.length === 0}
 	<div class="empty-state">
 		<span class="empty-icon">○</span>
 		<span class="empty-text">NO GAMES SCHEDULED</span>
+		<span class="empty-subtext">Try selecting a different date</span>
 	</div>
 {:else}
 	<div class="games-list">
@@ -66,6 +114,12 @@
 		gap: var(--space-md);
 	}
 
+	.skeleton-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: var(--space-md);
+	}
+
 	.game-item {
 		display: contents;
 	}
@@ -76,7 +130,8 @@
 	}
 
 	@media (max-width: 900px) {
-		.games-list {
+		.games-list,
+		.skeleton-grid {
 			display: flex;
 			flex-direction: column;
 			gap: var(--space-md);
@@ -101,69 +156,97 @@
 		}
 	}
 
-	.loading-state,
 	.error-state,
 	.empty-state {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: var(--space-md);
+		gap: var(--space-sm);
 		padding: var(--space-2xl);
 		background: var(--bg-card);
 		border: 1px solid var(--border-primary);
 		border-radius: var(--radius-sm);
 	}
 
-	.loading-spinner {
-		width: 24px;
-		height: 24px;
-		border: 2px solid var(--border-primary);
-		border-top-color: var(--accent-primary);
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
-	}
-
-	@keyframes spin {
-		to { transform: rotate(360deg); }
-	}
-
-	.loading-text,
-	.empty-text {
-		font-family: var(--font-stats);
-		font-size: 12px;
-		font-weight: 500;
-		letter-spacing: 0.05em;
-		color: var(--text-muted);
-	}
-
 	.error-state {
-		border-color: var(--status-live);
+		border-color: var(--stat-negative);
 	}
 
 	.error-icon {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
+		width: 40px;
+		height: 40px;
 		font-family: var(--font-stats);
-		font-size: 18px;
+		font-size: 20px;
 		font-weight: 700;
-		color: var(--status-live);
-		border: 2px solid var(--status-live);
-		border-radius: 50%;
+		color: white;
+		background: var(--stat-negative);
+		border-radius: var(--radius-sm);
 	}
 
-	.error-text {
+	.error-title {
+		font-family: var(--font-stats);
+		font-size: 13px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		color: var(--text-primary);
+		margin-top: var(--space-xs);
+	}
+
+	.error-description {
 		font-family: var(--font-display);
 		font-size: 13px;
 		color: var(--text-secondary);
 		text-align: center;
+		max-width: 280px;
+	}
+
+	.retry-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		margin-top: var(--space-sm);
+		padding: var(--space-sm) var(--space-md);
+		font-family: var(--font-stats);
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: 0.03em;
+		color: var(--text-primary);
+		background: var(--bg-inset);
+		border: 1px solid var(--border-primary);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: border-color var(--transition-fast), background var(--transition-fast);
+	}
+
+	.retry-btn:hover {
+		border-color: var(--accent-primary);
+		background: var(--bg-card-hover);
+	}
+
+	.retry-btn:active {
+		background: var(--bg-inset);
 	}
 
 	.empty-icon {
-		font-size: 32px;
+		font-size: 40px;
+		color: var(--text-muted);
+	}
+
+	.empty-text {
+		font-family: var(--font-stats);
+		font-size: 13px;
+		font-weight: 500;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+	}
+
+	.empty-subtext {
+		font-family: var(--font-display);
+		font-size: 13px;
 		color: var(--text-muted);
 	}
 </style>

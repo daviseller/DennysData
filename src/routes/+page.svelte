@@ -5,32 +5,58 @@
 	import GamesList from '$lib/components/GamesList.svelte';
 	import BoxScorePanel from '$lib/components/BoxScorePanel.svelte';
 
-	let currentTheme = $state('arena');
+	function getStoredTheme(): string {
+		if (typeof document === 'undefined') return 'arena';
+		const match = document.cookie.match(/(?:^|; )theme=([^;]*)/);
+		return match ? match[1] : 'arena';
+	}
+
+	function storeTheme(themeId: string) {
+		// Store for 1 year
+		const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+		document.cookie = `theme=${themeId}; expires=${expires}; path=/; SameSite=Lax`;
+	}
+
+	let currentTheme = $state(getStoredTheme());
 	let selectedDate = $state(new Date());
 	let games = $state<Game[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
-	let selectedGameId = $state<number | null>(null);
+	let selectedGame = $state<Game | null>(null);
+	let themeDropdownOpen = $state(false);
 
 	// Track pending request to cancel on new requests
 	let gamesAbortController: AbortController | null = null;
 
 	const themes = [
-		{ id: 'hardwood', name: 'Hardwood', type: 'dark' },
-		{ id: 'broadcast', name: 'Broadcast', type: 'dark' },
-		{ id: 'tunnel', name: 'Tunnel', type: 'dark' },
-		{ id: 'jumbotron', name: 'Jumbotron', type: 'dark' },
-		{ id: 'blackout', name: 'Blackout', type: 'dark' },
 		{ id: 'arena', name: 'Arena', type: 'light' },
 		{ id: 'courtside', name: 'Courtside', type: 'light' },
 		{ id: 'pressbox', name: 'Pressbox', type: 'light' },
 		{ id: 'practice', name: 'Practice', type: 'light' },
-		{ id: 'chalk', name: 'Chalk', type: 'light' }
+		{ id: 'chalk', name: 'Chalk', type: 'light' },
+		{ id: 'hardwood', name: 'Hardwood', type: 'dark' },
+		{ id: 'broadcast', name: 'Broadcast', type: 'dark' },
+		{ id: 'tunnel', name: 'Tunnel', type: 'dark' },
+		{ id: 'jumbotron', name: 'Jumbotron', type: 'dark' },
+		{ id: 'blackout', name: 'Blackout', type: 'dark' }
 	];
 
 	function setTheme(themeId: string) {
 		currentTheme = themeId;
 		document.documentElement.setAttribute('data-theme', themeId);
+		storeTheme(themeId);
+		themeDropdownOpen = false;
+	}
+
+	function toggleThemeDropdown() {
+		themeDropdownOpen = !themeDropdownOpen;
+	}
+
+	function handleClickOutside(e: MouseEvent) {
+		const target = e.target as HTMLElement;
+		if (!target.closest('.theme-dropdown')) {
+			themeDropdownOpen = false;
+		}
 	}
 
 	async function loadGames(date: Date) {
@@ -42,7 +68,7 @@
 
 		loading = true;
 		error = null;
-		selectedGameId = null;
+		// Don't close box score when changing dates
 
 		const dateStr = formatDateForApi(date);
 		const result = await fetchGames(dateStr, gamesAbortController.signal);
@@ -56,7 +82,21 @@
 			error = result.error.message;
 			games = [];
 		} else {
-			games = result.data?.data ?? [];
+			// Sort games by time (earliest to latest)
+			const rawGames = result.data?.data ?? [];
+			games = rawGames.sort((a, b) => {
+				// Try to parse status as datetime for scheduled games
+				const timeA = new Date(a.status).getTime();
+				const timeB = new Date(b.status).getTime();
+				// If both are valid dates, sort by time
+				if (!isNaN(timeA) && !isNaN(timeB)) {
+					return timeA - timeB;
+				}
+				// Final/live games go after scheduled games
+				if (!isNaN(timeA)) return -1;
+				if (!isNaN(timeB)) return 1;
+				return 0;
+			});
 		}
 
 		loading = false;
@@ -68,11 +108,24 @@
 	}
 
 	function handleSelectGame(game: Game) {
-		selectedGameId = game.id;
+		selectedGame = game;
 	}
 
 	function handleCloseBoxScore() {
-		selectedGameId = null;
+		selectedGame = null;
+	}
+
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		// Escape closes box score panel
+		if (e.key === 'Escape' && selectedGame !== null) {
+			e.preventDefault();
+			handleCloseBoxScore();
+		}
+		// Escape also closes theme dropdown
+		if (e.key === 'Escape' && themeDropdownOpen) {
+			e.preventDefault();
+			themeDropdownOpen = false;
+		}
 	}
 
 	// Apply theme on mount and when changed
@@ -85,11 +138,88 @@
 		loadGames(selectedDate);
 	});
 
-	const showBoxScore = $derived(selectedGameId !== null);
+	// Close dropdown on click outside
+	$effect(() => {
+		if (themeDropdownOpen) {
+			document.addEventListener('click', handleClickOutside);
+			return () => document.removeEventListener('click', handleClickOutside);
+		}
+	});
+
+	// Global keyboard shortcuts
+	$effect(() => {
+		document.addEventListener('keydown', handleGlobalKeydown);
+		return () => document.removeEventListener('keydown', handleGlobalKeydown);
+	});
+
+	const showBoxScore = $derived(selectedGame !== null);
+	const currentThemeInfo = $derived(themes.find(t => t.id === currentTheme));
+	const selectedGameId = $derived(selectedGame?.id ?? null);
+	const selectedGameDate = $derived(selectedGame ? new Date(selectedGame.date).toLocaleDateString('en-US', {
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric'
+	}).toUpperCase() : null);
 </script>
 
 <div class="container" class:has-panel={showBoxScore}>
 	<main class="main-content">
+		<header class="header">
+			<span class="header-title">DennysData</span>
+			<span class="header-divider">·</span>
+			<span class="header-subtitle">NBA</span>
+			<span class="header-divider">·</span>
+			<span class="header-subtitle">Box Scores</span>
+			<div class="header-spacer"></div>
+			<div class="theme-dropdown">
+				<button class="theme-trigger" onclick={toggleThemeDropdown}>
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="5"/>
+						<line x1="12" y1="1" x2="12" y2="3"/>
+						<line x1="12" y1="21" x2="12" y2="23"/>
+						<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+						<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+						<line x1="1" y1="12" x2="3" y2="12"/>
+						<line x1="21" y1="12" x2="23" y2="12"/>
+						<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+						<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+					</svg>
+					<span class="theme-current">{currentThemeInfo?.name}</span>
+					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M6 9l6 6 6-6"/>
+					</svg>
+				</button>
+				{#if themeDropdownOpen}
+					<div class="theme-menu">
+						<div class="theme-group">
+							<span class="theme-group-label">LIGHT</span>
+							{#each themes.filter(t => t.type === 'light') as theme (theme.id)}
+								<button
+									class="theme-option"
+									class:active={currentTheme === theme.id}
+									onclick={() => setTheme(theme.id)}
+								>
+									{theme.name}
+								</button>
+							{/each}
+						</div>
+						<div class="theme-group">
+							<span class="theme-group-label">DARK</span>
+							{#each themes.filter(t => t.type === 'dark') as theme (theme.id)}
+								<button
+									class="theme-option"
+									class:active={currentTheme === theme.id}
+									onclick={() => setTheme(theme.id)}
+								>
+									{theme.name}
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			</div>
+		</header>
+
 		<section class="day-picker-section">
 			<DayPicker {selectedDate} onDateChange={handleDateChange} />
 		</section>
@@ -105,40 +235,18 @@
 				{error}
 				{selectedGameId}
 				onSelectGame={handleSelectGame}
+				onRetry={() => loadGames(selectedDate)}
 			/>
 		</section>
-
-		<section class="panel mt-lg">
-			<div class="panel-header">
-				<span class="label">Theme</span>
-			</div>
-			<div class="panel-body">
-				<div class="theme-grid">
-					{#each themes as theme (theme.id)}
-						<button
-							class="theme-btn"
-							class:active={currentTheme === theme.id}
-							onclick={() => setTheme(theme.id)}
-						>
-							<span class="theme-name">{theme.name}</span>
-							<span class="theme-type label">{theme.type}</span>
-						</button>
-					{/each}
-				</div>
-			</div>
-		</section>
-
-		<footer class="footer">
-			<span class="footer-text">DennysData</span>
-			<span class="footer-divider">·</span>
-			<span class="footer-text">NBA Box Scores</span>
-		</footer>
 	</main>
 
 	{#if showBoxScore}
 		<aside class="box-score-sidebar">
 			<div class="sidebar-header">
 				<span class="label">BOX SCORE</span>
+				{#if selectedGameDate}
+					<span class="sidebar-date">{selectedGameDate}</span>
+				{/if}
 				<button class="close-btn" onclick={handleCloseBoxScore} aria-label="Close box score">
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M18 6L6 18M6 6l12 12"/>
@@ -180,10 +288,19 @@
 	.sidebar-header {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		gap: var(--space-sm);
 		padding-bottom: var(--space-sm);
 		margin-bottom: var(--space-md);
 		border-bottom: 1px solid var(--border-secondary);
+	}
+
+	.sidebar-date {
+		font-family: var(--font-stats);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.03em;
+		color: var(--text-secondary);
+		margin-left: auto;
 	}
 
 	.close-btn {
@@ -233,45 +350,6 @@
 		color: var(--text-muted);
 	}
 
-	.theme-grid {
-		display: grid;
-		grid-template-columns: repeat(5, 1fr);
-		gap: var(--space-sm);
-	}
-
-	.theme-btn {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-xs);
-		padding: var(--space-sm);
-		background: var(--bg-inset);
-		border: 1px solid var(--border-primary);
-		border-radius: var(--radius-sm);
-		cursor: pointer;
-		transition: border-color var(--transition-fast);
-	}
-
-	.theme-btn:hover {
-		border-color: var(--accent-primary);
-	}
-
-	.theme-btn.active {
-		border-color: var(--accent-primary);
-		background: var(--bg-card-hover);
-	}
-
-	.theme-name {
-		font-family: var(--font-display);
-		font-size: 12px;
-		font-weight: 500;
-		color: var(--text-primary);
-	}
-
-	.theme-type {
-		font-size: 9px;
-	}
-
 	@media (max-width: 900px) {
 		.container.has-panel {
 			display: block;
@@ -287,30 +365,127 @@
 		.container {
 			padding: var(--space-md);
 		}
-
-		.theme-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
 	}
 
-	.footer {
+	.header {
 		display: flex;
 		align-items: center;
-		justify-content: center;
 		gap: var(--space-sm);
-		padding: var(--space-xl) 0 var(--space-md);
+		padding-bottom: var(--space-lg);
+		margin-bottom: var(--space-md);
 	}
 
-	.footer-text {
+	.header-title {
 		font-family: var(--font-stats);
-		font-size: 11px;
+		font-size: 13px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		color: var(--text-primary);
+	}
+
+	.header-subtitle {
+		font-family: var(--font-stats);
+		font-size: 13px;
 		font-weight: 400;
 		letter-spacing: 0.02em;
-		color: var(--text-muted);
+		color: var(--text-secondary);
 	}
 
-	.footer-divider {
-		color: var(--text-muted);
+	.header-divider {
+		color: var(--text-secondary);
 		opacity: 0.5;
+	}
+
+	.header-spacer {
+		flex: 1;
+	}
+
+	/* Theme Dropdown */
+	.theme-dropdown {
+		position: relative;
+	}
+
+	.theme-trigger {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-xs) var(--space-sm);
+		font-family: var(--font-stats);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		color: var(--text-secondary);
+		background: var(--bg-inset);
+		border: 1px solid var(--border-primary);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+	}
+
+	.theme-trigger:hover {
+		color: var(--text-primary);
+		border-color: var(--accent-primary);
+		background: var(--bg-card-hover);
+	}
+
+	.theme-menu {
+		position: absolute;
+		top: 100%;
+		right: 0;
+		margin-top: var(--space-xs);
+		padding: var(--space-sm);
+		background: var(--bg-card);
+		border: 1px solid var(--border-primary);
+		border-radius: var(--radius-sm);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+		z-index: 100;
+		min-width: 120px;
+	}
+
+	.theme-group {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.theme-group:not(:last-child) {
+		margin-bottom: var(--space-sm);
+		padding-bottom: var(--space-sm);
+		border-bottom: 1px solid var(--border-secondary);
+	}
+
+	.theme-group-label {
+		font-family: var(--font-stats);
+		font-size: 9px;
+		font-weight: 500;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+		padding: 2px var(--space-sm);
+		margin-bottom: 2px;
+	}
+
+	.theme-option {
+		display: block;
+		width: 100%;
+		padding: var(--space-xs) var(--space-sm);
+		font-family: var(--font-display);
+		font-size: 12px;
+		font-weight: 400;
+		color: var(--text-primary);
+		background: transparent;
+		border: none;
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		text-align: left;
+		transition: background var(--transition-fast);
+	}
+
+	.theme-option:hover {
+		background: var(--bg-inset);
+	}
+
+	.theme-option.active {
+		background: var(--bg-inset);
+		font-weight: 500;
 	}
 </style>

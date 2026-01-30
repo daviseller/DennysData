@@ -4,6 +4,7 @@
 	import type { BoxScore, Game } from '$lib/types';
 	import StatsTable from './StatsTable.svelte';
 	import TeamTotals from './TeamTotals.svelte';
+	import BoxScoreSkeleton from './BoxScoreSkeleton.svelte';
 
 	interface Props {
 		gameId: number;
@@ -51,6 +52,37 @@
 		loading = false;
 	}
 
+	function getErrorInfo(error: string): { title: string; description: string } {
+		if (error.includes('fetch') || error.includes('network') || error.includes('Failed')) {
+			return {
+				title: 'CONNECTION ERROR',
+				description: 'Unable to load box score. Check your connection.'
+			};
+		}
+		if (error.includes('timeout') || error.includes('Timeout')) {
+			return {
+				title: 'REQUEST TIMEOUT',
+				description: 'Loading took too long. Try again.'
+			};
+		}
+		if (error.includes('500') || error.includes('Server')) {
+			return {
+				title: 'SERVER ERROR',
+				description: 'Something went wrong. Try again in a moment.'
+			};
+		}
+		if (error.includes('404') || error.includes('not found')) {
+			return {
+				title: 'NOT FOUND',
+				description: 'Box score data is not available.'
+			};
+		}
+		return {
+			title: 'ERROR',
+			description: error
+		};
+	}
+
 	type GameStatus = 'live' | 'final' | 'scheduled';
 
 	function getGameStatus(game: Game): GameStatus {
@@ -82,22 +114,30 @@
 	const game = $derived(boxScore?.game);
 	const status = $derived(game ? getGameStatus(game) : 'scheduled');
 	const statusText = $derived(game ? getStatusText(game) : '');
+	const gameDate = $derived(game ? new Date(game.date).toLocaleDateString('en-US', {
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric'
+	}).toUpperCase() : '');
 	const homeColors = $derived(game ? getTeamColors(game.home_team.abbreviation) : { primary: '#666', secondary: '#333' });
 	const visitorColors = $derived(game ? getTeamColors(game.visitor_team.abbreviation) : { primary: '#666', secondary: '#333' });
 	const hasStats = $derived(boxScore && (boxScore.home_team.players.length > 0 || boxScore.visitor_team.players.length > 0));
+	const errorInfo = $derived(error ? getErrorInfo(error) : null);
 </script>
 
 <div class="box-score-panel">
 	{#if loading}
-		<div class="loading-state">
-			<div class="loading-spinner"></div>
-			<span class="loading-text">LOADING BOX SCORE</span>
-		</div>
+		<BoxScoreSkeleton />
 	{:else if error}
 		<div class="error-state">
 			<span class="error-icon">!</span>
-			<span class="error-text">{error}</span>
+			<span class="error-title">{errorInfo?.title}</span>
+			<span class="error-description">{errorInfo?.description}</span>
 			<button class="retry-btn" onclick={() => loadBoxScore(gameId)}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M1 4v6h6M23 20v-6h-6"/>
+					<path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+				</svg>
 				RETRY
 			</button>
 		</div>
@@ -113,6 +153,7 @@
 				</div>
 
 				<div class="game-status">
+					<span class="game-date">{gameDate}</span>
 					<span class="status-indicator status-{status}">
 						<span class="status-dot"></span>
 						{statusText}
@@ -174,74 +215,53 @@
 		max-width: 100%;
 	}
 
-	/* Loading State */
-	.loading-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-md);
-		padding: var(--space-2xl);
-		background: var(--bg-card);
-		border: 1px solid var(--border-primary);
-		border-radius: var(--radius-sm);
-	}
-
-	.loading-spinner {
-		width: 24px;
-		height: 24px;
-		border: 2px solid var(--border-secondary);
-		border-top-color: var(--accent-primary);
-		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
-	}
-
-	@keyframes spin {
-		to { transform: rotate(360deg); }
-	}
-
-	.loading-text {
-		font-family: var(--font-stats);
-		font-size: 12px;
-		font-weight: 500;
-		letter-spacing: 0.03em;
-		color: var(--text-muted);
-	}
-
 	/* Error State */
 	.error-state {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: var(--space-md);
+		gap: var(--space-sm);
 		padding: var(--space-2xl);
 		background: var(--bg-card);
-		border: 1px solid var(--border-primary);
+		border: 1px solid var(--stat-negative);
 		border-radius: var(--radius-sm);
 	}
 
 	.error-icon {
-		width: 32px;
-		height: 32px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: var(--stat-negative);
-		color: white;
+		width: 40px;
+		height: 40px;
 		font-family: var(--font-stats);
-		font-size: 18px;
+		font-size: 20px;
 		font-weight: 700;
+		color: white;
+		background: var(--stat-negative);
 		border-radius: var(--radius-sm);
 	}
 
-	.error-text {
-		font-family: var(--font-display);
-		font-size: 14px;
+	.error-title {
+		font-family: var(--font-stats);
+		font-size: 13px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
 		color: var(--text-primary);
+		margin-top: var(--space-xs);
+	}
+
+	.error-description {
+		font-family: var(--font-display);
+		font-size: 13px;
+		color: var(--text-secondary);
 		text-align: center;
 	}
 
 	.retry-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		margin-top: var(--space-sm);
 		padding: var(--space-sm) var(--space-md);
 		font-family: var(--font-stats);
 		font-size: 12px;
@@ -252,10 +272,11 @@
 		border: 1px solid var(--border-primary);
 		border-radius: var(--radius-sm);
 		cursor: pointer;
-		transition: background var(--transition-fast);
+		transition: border-color var(--transition-fast), background var(--transition-fast);
 	}
 
 	.retry-btn:hover {
+		border-color: var(--accent-primary);
 		background: var(--bg-card-hover);
 	}
 
@@ -310,6 +331,18 @@
 
 	.game-status {
 		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+	}
+
+	.game-date {
+		font-family: var(--font-stats);
+		font-size: 10px;
+		font-weight: 500;
+		letter-spacing: 0.03em;
+		color: var(--text-muted);
 	}
 
 	.status-indicator {
