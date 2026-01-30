@@ -1,5 +1,14 @@
 <script lang="ts">
-	let currentTheme = $state('hardwood');
+	import { fetchGames, formatDateForApi } from '$lib/api';
+	import type { Game } from '$lib/types';
+	import DayPicker from '$lib/components/DayPicker.svelte';
+	import GamesList from '$lib/components/GamesList.svelte';
+
+	let currentTheme = $state('arena');
+	let selectedDate = $state(new Date());
+	let games = $state<Game[]>([]);
+	let loading = $state(true);
+	let error = $state<string | null>(null);
 
 	const themes = [
 		{ id: 'hardwood', name: 'Hardwood', type: 'dark' },
@@ -11,13 +20,40 @@
 		{ id: 'courtside', name: 'Courtside', type: 'light' },
 		{ id: 'pressbox', name: 'Pressbox', type: 'light' },
 		{ id: 'practice', name: 'Practice', type: 'light' },
-		{ id: 'chalk', name: 'Chalk', type: 'light' },
+		{ id: 'chalk', name: 'Chalk', type: 'light' }
 	];
 
 	function setTheme(themeId: string) {
 		currentTheme = themeId;
 		document.documentElement.setAttribute('data-theme', themeId);
 	}
+
+	async function loadGames(date: Date) {
+		loading = true;
+		error = null;
+
+		const dateStr = formatDateForApi(date);
+		const result = await fetchGames(dateStr);
+
+		if (result.error) {
+			error = result.error.message;
+			games = [];
+		} else {
+			games = result.data?.data ?? [];
+		}
+
+		loading = false;
+	}
+
+	function handleDateChange(date: Date) {
+		selectedDate = date;
+		loadGames(date);
+	}
+
+	// Load games on mount
+	$effect(() => {
+		loadGames(selectedDate);
+	});
 </script>
 
 <div class="container">
@@ -26,9 +62,21 @@
 		<p class="text-secondary">NBA Box Scores</p>
 	</header>
 
+	<section class="day-picker-section">
+		<DayPicker {selectedDate} onDateChange={handleDateChange} />
+	</section>
+
+	<section class="games-section mt-lg">
+		<div class="section-header">
+			<span class="label">GAMES</span>
+			<span class="game-count">{games.length} {games.length === 1 ? 'game' : 'games'}</span>
+		</div>
+		<GamesList {games} {loading} {error} />
+	</section>
+
 	<section class="panel mt-lg">
 		<div class="panel-header">
-			<span class="label">Theme Selector</span>
+			<span class="label">Theme</span>
 		</div>
 		<div class="panel-body">
 			<div class="theme-grid">
@@ -45,124 +93,35 @@
 			</div>
 		</div>
 	</section>
-
-	<section class="panel mt-lg">
-		<div class="panel-header">
-			<span class="label">Sample Game Card</span>
-		</div>
-		<div class="panel-body">
-			<div class="game-card card">
-				<div class="game-status">
-					<span class="status-indicator status-live">
-						<span class="status-dot"></span>
-						Q3 4:32
-					</span>
-				</div>
-				<div class="game-teams">
-					<div class="team-row">
-						<span class="team-abbr">LAL</span>
-						<span class="score">98</span>
-					</div>
-					<div class="team-row">
-						<span class="team-abbr">BOS</span>
-						<span class="score stat-leader">102</span>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<section class="panel mt-lg">
-		<div class="panel-header">
-			<span class="label">Status Indicators</span>
-		</div>
-		<div class="panel-body">
-			<div class="flex gap-md">
-				<span class="status-indicator status-live">
-					<span class="status-dot"></span>
-					LIVE
-				</span>
-				<span class="status-indicator status-halftime">
-					<span class="status-dot"></span>
-					HALFTIME
-				</span>
-				<span class="status-indicator status-final">
-					<span class="status-dot"></span>
-					FINAL
-				</span>
-				<span class="status-indicator status-scheduled">
-					<span class="status-dot"></span>
-					7:30 PM
-				</span>
-			</div>
-		</div>
-	</section>
-
-	<section class="panel mt-lg">
-		<div class="panel-header">
-			<span class="label">Sample Stats Table</span>
-		</div>
-		<div class="panel-body" style="padding: 0;">
-			<table>
-				<thead>
-					<tr>
-						<th>Player</th>
-						<th class="number">MIN</th>
-						<th class="number">PTS</th>
-						<th class="number">REB</th>
-						<th class="number">AST</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>L. James</td>
-						<td class="number mono">38</td>
-						<td class="number mono stat-leader">32</td>
-						<td class="number mono">10</td>
-						<td class="number mono">8</td>
-					</tr>
-					<tr>
-						<td>A. Davis</td>
-						<td class="number mono">36</td>
-						<td class="number mono">28</td>
-						<td class="number mono stat-leader">14</td>
-						<td class="number mono">3</td>
-					</tr>
-					<tr>
-						<td>D. Russell</td>
-						<td class="number mono">32</td>
-						<td class="number mono">18</td>
-						<td class="number mono">4</td>
-						<td class="number mono stat-leader">11</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</section>
-
-	<section class="panel mt-lg">
-		<div class="panel-header">
-			<span class="label">Buttons</span>
-		</div>
-		<div class="panel-body">
-			<div class="flex gap-sm">
-				<button class="btn">Default</button>
-				<button class="btn btn-primary">Primary</button>
-				<button class="btn btn-sm">Small</button>
-			</div>
-		</div>
-	</section>
 </div>
 
 <style>
 	.container {
-		max-width: 800px;
+		max-width: 960px;
 		margin: 0 auto;
 		padding: var(--space-lg);
 	}
 
 	.header {
 		margin-bottom: var(--space-lg);
+	}
+
+	.day-picker-section {
+		display: flex;
+		justify-content: center;
+	}
+
+	.section-header {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-md);
+	}
+
+	.game-count {
+		font-family: var(--font-stats);
+		font-size: 12px;
+		color: var(--text-muted);
 	}
 
 	.theme-grid {
@@ -204,28 +163,11 @@
 		font-size: 9px;
 	}
 
-	.game-card {
-		max-width: 280px;
-		padding: var(--space-md);
-	}
-
-	.game-status {
-		margin-bottom: var(--space-sm);
-	}
-
-	.game-teams {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-xs);
-	}
-
-	.team-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-
 	@media (max-width: 640px) {
+		.container {
+			padding: var(--space-md);
+		}
+
 		.theme-grid {
 			grid-template-columns: repeat(2, 1fr);
 		}

@@ -29,9 +29,8 @@
    Dark Themes
    ========================================================================== */
 
-/* Hardwood (Default Dark) - Classic court browns, warm blacks */
-[data-theme="hardwood"],
-:root {
+/* Hardwood - Classic court browns, warm blacks */
+[data-theme="hardwood"] {
   --bg-app: #0d0b09;
   --bg-card: #1a1714;
   --bg-card-hover: #242019;
@@ -174,8 +173,9 @@
    Light Themes
    ========================================================================== */
 
-/* Arena - Bright stadium lighting, clean whites */
-[data-theme="arena"] {
+/* Arena (Default Light) - Bright stadium lighting, clean whites */
+[data-theme="arena"],
+:root {
   --bg-app: #f8f8f8;
   --bg-card: #ffffff;
   --bg-card-hover: #f0f0f0;
