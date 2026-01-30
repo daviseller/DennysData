@@ -1,14 +1,28 @@
 <script lang="ts">
 	import type { Game } from '$lib/types';
 	import GameCard from './GameCard.svelte';
+	import BoxScorePanel from './BoxScorePanel.svelte';
 
 	interface Props {
 		games: Game[];
 		loading: boolean;
 		error: string | null;
+		selectedGameId?: number | null;
+		onSelectGame?: (game: Game) => void;
 	}
 
-	let { games, loading, error }: Props = $props();
+	let { games, loading, error, selectedGameId = null, onSelectGame }: Props = $props();
+
+	function handleGameSelect(game: Game) {
+		if (onSelectGame) {
+			// Toggle off if clicking the same game
+			if (selectedGameId === game.id) {
+				// We need a way to deselect - pass null somehow
+				// For now, just call with the same game and let parent handle it
+			}
+			onSelectGame(game);
+		}
+	}
 </script>
 
 {#if loading}
@@ -27,18 +41,64 @@
 		<span class="empty-text">NO GAMES SCHEDULED</span>
 	</div>
 {:else}
-	<div class="games-grid">
+	<div class="games-list">
 		{#each games as game (game.id)}
-			<GameCard {game} />
+			<div class="game-item">
+				<GameCard
+					{game}
+					selected={selectedGameId === game.id}
+					onSelect={handleGameSelect}
+				/>
+				{#if selectedGameId === game.id}
+					<div class="inline-boxscore">
+						<BoxScorePanel gameId={game.id} />
+					</div>
+				{/if}
+			</div>
 		{/each}
 	</div>
 {/if}
 
 <style>
-	.games-grid {
+	.games-list {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 		gap: var(--space-md);
+	}
+
+	.game-item {
+		display: contents;
+	}
+
+	/* Mobile: show inline box score as accordion */
+	.inline-boxscore {
+		display: none;
+	}
+
+	@media (max-width: 900px) {
+		.games-list {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-md);
+			overflow-x: hidden;
+		}
+
+		.game-item {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-md);
+		}
+
+		.inline-boxscore {
+			display: block;
+			padding: var(--space-sm);
+			background: var(--bg-inset);
+			border: 1px solid var(--border-primary);
+			border-radius: var(--radius-sm);
+			margin-top: calc(-1 * var(--space-sm));
+			overflow-x: hidden;
+			max-width: 100%;
+		}
 	}
 
 	.loading-state,
@@ -105,11 +165,5 @@
 	.empty-icon {
 		font-size: 32px;
 		color: var(--text-muted);
-	}
-
-	@media (max-width: 640px) {
-		.games-grid {
-			grid-template-columns: 1fr;
-		}
 	}
 </style>

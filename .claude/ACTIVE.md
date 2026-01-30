@@ -1,13 +1,27 @@
 # Currently Active
 
 **Plan:** app-setup
-**Session:** None (last: #2 on 2026-01-30)
+**Session:** None (idle)
+**Last Session:** #4 completed 2026-01-30
 **Mode:** Idle
 
 ## Last Session Summary
-- Completed 5 of 5 tasks (Phase 2 complete)
-- Progress: 15% → 30%
-- Next: Phase 3 - Day Picker & Games List
 
-## To Resume
-`/workflow:session-start`
+Session #4 completed Phase 4 - Game Details:
+- StatsTable, TeamTotals, BoxScorePanel components
+- Side-by-side layout (games left, box score right)
+- Mobile accordion pattern
+- Request cancellation for rapid navigation
+- Dark theme fix, footer added
+
+## Next Session Focus
+
+Phase 5 - Caching & Polish:
+- Supabase integration for historical game caching
+- Loading/error state polish
+- Mobile optimization refinements
+
+## Quick Commands
+
+- `/workflow:session-start` - Begin next session
+- `/workflow:status` - Check plan status

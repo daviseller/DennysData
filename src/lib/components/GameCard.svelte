@@ -4,9 +4,11 @@
 
 	interface Props {
 		game: Game;
+		selected?: boolean;
+		onSelect?: (game: Game) => void;
 	}
 
-	let { game }: Props = $props();
+	let { game, selected = false, onSelect }: Props = $props();
 
 	type GameStatus = 'live' | 'final' | 'scheduled';
 
@@ -45,6 +47,13 @@
 		return null;
 	}
 
+	function handleClick(e: MouseEvent) {
+		if (onSelect) {
+			e.preventDefault();
+			onSelect(game);
+		}
+	}
+
 	const status = $derived(getGameStatus(game));
 	const statusText = $derived(getStatusText(game));
 	const winner = $derived(getWinner(game));
@@ -52,7 +61,7 @@
 	const visitorColors = $derived(getTeamColors(game.visitor_team.abbreviation));
 </script>
 
-<a href="/game/{game.id}" class="game-card">
+<a href="/game/{game.id}" class="game-card" class:selected onclick={handleClick}>
 	<div class="game-status">
 		<span class="status-indicator status-{status}">
 			<span class="status-dot"></span>
@@ -88,11 +97,18 @@
 		text-decoration: none;
 		color: inherit;
 		transition: border-color var(--transition-fast), background var(--transition-fast);
+		cursor: pointer;
 	}
 
 	.game-card:hover {
 		border-color: var(--accent-primary);
 		background: var(--bg-card-hover);
+	}
+
+	.game-card.selected {
+		border-color: var(--accent-primary);
+		background: var(--bg-card-hover);
+		box-shadow: inset 3px 0 0 var(--accent-primary);
 	}
 
 	.game-status {

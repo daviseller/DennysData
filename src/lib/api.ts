@@ -3,10 +3,11 @@ import type { GamesResponse, BoxScore, ApiResult } from './types';
 /**
  * Fetch games for a specific date
  * @param date - Date in YYYY-MM-DD format
+ * @param signal - Optional AbortSignal to cancel the request
  */
-export async function fetchGames(date: string): Promise<ApiResult<GamesResponse>> {
+export async function fetchGames(date: string, signal?: AbortSignal): Promise<ApiResult<GamesResponse>> {
 	try {
-		const response = await fetch(`/api/games?date=${date}`);
+		const response = await fetch(`/api/games?date=${date}`, { signal });
 
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({}));
@@ -22,6 +23,10 @@ export async function fetchGames(date: string): Promise<ApiResult<GamesResponse>
 		const data: GamesResponse = await response.json();
 		return { data, error: null };
 	} catch (err) {
+		// Don't treat aborted requests as errors
+		if (err instanceof Error && err.name === 'AbortError') {
+			return { data: null, error: null };
+		}
 		return {
 			data: null,
 			error: {
@@ -35,10 +40,11 @@ export async function fetchGames(date: string): Promise<ApiResult<GamesResponse>
 /**
  * Fetch box score for a specific game
  * @param gameId - The game ID
+ * @param signal - Optional AbortSignal to cancel the request
  */
-export async function fetchBoxScore(gameId: number): Promise<ApiResult<BoxScore>> {
+export async function fetchBoxScore(gameId: number, signal?: AbortSignal): Promise<ApiResult<BoxScore>> {
 	try {
-		const response = await fetch(`/api/boxscore/${gameId}`);
+		const response = await fetch(`/api/boxscore/${gameId}`, { signal });
 
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({}));
@@ -54,6 +60,10 @@ export async function fetchBoxScore(gameId: number): Promise<ApiResult<BoxScore>
 		const result: { data: BoxScore } = await response.json();
 		return { data: result.data, error: null };
 	} catch (err) {
+		// Don't treat aborted requests as errors
+		if (err instanceof Error && err.name === 'AbortError') {
+			return { data: null, error: null };
+		}
 		return {
 			data: null,
 			error: {

@@ -22,7 +22,7 @@
 
 See [design-system.md](design-system.md) for full details.
 
-- Dark mode default
+- Light mode default (Arena theme)
 - Sports broadcast aesthetic
 - Fonts: IBM Plex Sans (display) + IBM Plex Mono (stats)
 - Mobile-first, data-dense
@@ -60,20 +60,25 @@ See [design-system.md](design-system.md) for full details.
 - [x] Error handling
 - [x] Client fetch helpers
 
-### Phase 3: Day Picker & Games List
-- [ ] Day picker component
-- [ ] Box score cards
-- [ ] Responsive layout
+### Phase 3: Day Picker & Games List ✓
+- [x] Day picker component
+- [x] Box score cards
+- [x] Responsive layout
 
-### Phase 4: Game Details
-- [ ] Detail page/view
-- [ ] Player stats table
-- [ ] Team stats
+### Phase 4: Game Details ✓
+- [x] StatsTable component (sortable player stats)
+- [x] TeamTotals component (team comparison bars)
+- [x] BoxScorePanel component (reusable box score view)
+- [x] Side-by-side layout (games left, box score right)
+- [x] Mobile accordion (inline box score below selected game)
+- [x] Game detail page route `/game/[id]`
+- [x] Request cancellation for rapid navigation
+- [x] Loading and error states
 
 ### Phase 5: Caching & Polish
 - [ ] Supabase integration
 - [ ] Cache historical games
-- [ ] Loading/error states
+- [ ] Loading/error states polish
 - [ ] Mobile optimization
 
 ### Phase 6: Data Viz (Future)
@@ -107,10 +112,10 @@ See [design-system.md](design-system.md) for full details.
 
 ## Success Criteria
 
-- [ ] Browse any date's games
-- [ ] View player/team stats for any game
-- [ ] Mobile-responsive
-- [ ] Deployed to Vercel
+- [x] Browse any date's games
+- [x] View player/team stats for any game
+- [x] Mobile-responsive
+- [ ] Deployed to Vercel (needs redeploy with Phase 4)
 - [ ] < 2s load times
 
 ## Links

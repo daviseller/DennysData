@@ -1,57 +1,66 @@
 # Next Session: app-setup
 
-## Focus: Phase 3 - Day Picker & Games List
+## Focus: Phase 5 - Caching & Polish
 
 ### Objectives
 
-1. Build the day picker component
-2. Create game cards showing scores and teams
-3. Wire up to live API data
-4. Implement responsive layout
+1. Set up Supabase for caching historical games
+2. Implement cache layer for API responses
+3. Polish loading/error states
+4. Mobile optimization refinements
 
 ### Pre-Session Checklist
 
-- [x] API key configured in `.env.local`
-- [x] API routes tested and working
+- [ ] Supabase project created
+- [ ] Database schema designed
+- [ ] Environment variables configured
 
-### Components to Create
+### Database Schema Ideas
 
-```
-src/lib/components/
-├── DayPicker.svelte      # Date navigation
-├── GameCard.svelte       # Individual game display
-└── GamesList.svelte      # Container for game cards
-```
+```sql
+-- Games cache
+CREATE TABLE games (
+  id INT PRIMARY KEY,          -- balldontlie game ID
+  date DATE NOT NULL,
+  home_team_id INT NOT NULL,
+  visitor_team_id INT NOT NULL,
+  home_team_score INT,
+  visitor_team_score INT,
+  status TEXT NOT NULL,
+  period INT,
+  time TEXT,
+  data JSONB NOT NULL,         -- Full API response
+  cached_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-### Day Picker Requirements
+-- Box scores cache
+CREATE TABLE box_scores (
+  game_id INT PRIMARY KEY,
+  data JSONB NOT NULL,         -- Full API response
+  cached_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-- Default to today's date
-- Left/right arrow buttons for ±1 day
-- Click date to open calendar picker (optional)
-- Display: "Friday, Jan 30, 2026"
-
-### Game Card Requirements
-
-- Show team abbreviations with colors
-- Display score (or scheduled time if not started)
-- Status indicator (Final, Live, Scheduled)
-- Click to navigate to `/game/[id]`
-
-### Data Flow
-
-```
-+page.svelte
-  ├── DayPicker (controls selectedDate)
-  ├── GamesList
-  │     └── GameCard (for each game)
-  └── Uses $lib/api.ts to fetch
+-- Indexes
+CREATE INDEX games_date_idx ON games(date);
+CREATE INDEX box_scores_game_id_idx ON box_scores(game_id);
 ```
 
-### Deliverables
+### Cache Strategy
 
-- [ ] DayPicker component
-- [ ] GameCard component
-- [ ] GamesList component
-- [ ] Home page wired to API
-- [ ] Responsive layout (mobile-first)
-- [ ] Loading and error states
+1. **Historical games** (> 24h old): Cache indefinitely
+2. **Recent games** (< 24h old): Cache for 5 min
+3. **Live games**: No cache, fetch fresh
+
+### Polish Items
+
+- [ ] Skeleton loading states
+- [ ] Stale-while-revalidate pattern
+- [ ] Better error messages
+- [ ] Empty state illustrations
+- [ ] Keyboard navigation for day picker
+
+### Optional Enhancements
+
+- Auto-refresh for live games (30s interval)
+- Quarter-by-quarter scoring breakdown
+- Calendar picker for date jumping
