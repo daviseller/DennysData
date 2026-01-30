@@ -1,21 +1,13 @@
 # Currently Active
 
 **Plan:** app-setup
-**Session:** #1
-**Started:** 2026-01-30T14:00:00
-**Mode:** Developer
+**Session:** None (last: #2 on 2026-01-30)
+**Mode:** Idle
 
-## This Session
+## Last Session Summary
+- Completed 5 of 5 tasks (Phase 2 complete)
+- Progress: 15% → 30%
+- Next: Phase 3 - Day Picker & Games List
 
-**Objective:** Scaffold SvelteKit project with Bun, pure CSS design tokens, and deploy to Vercel.
-
-### Tasks
-- [ ] Initialize SvelteKit with Bun
-- [ ] Set up design tokens (all 10 themes)
-- [ ] Set up base styles (reset, typography)
-- [ ] Deploy to Vercel
-
-## Session Notes
-- Pure CSS approach (no Tailwind)
-- Hardwood theme is default dark
-- IBM Plex Sans + IBM Plex Mono fonts
+## To Resume
+`/workflow:session-start`

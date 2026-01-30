@@ -4,13 +4,13 @@
 
 ## Plans
 
-| Plan | Status | Created | Description |
-|------|--------|---------|-------------|
-| [app-setup](plans/app-setup/PLAN.md) | Ready | 2026-01-30 | NBA box scores site - Bun + SvelteKit + Vercel + balldontlie.io |
+| Plan | Status | Progress | Last Worked | Description |
+|------|--------|----------|-------------|-------------|
+| [app-setup](plans/app-setup/PLAN.md) | In Progress | 30% | 2026-01-30 | NBA box scores site - Bun + SvelteKit + Vercel |
 
 ## Quick Reference
 
-- **Active Plan:** None
+- **Active Plan:** app-setup
 - **Total Plans:** 1
 - **Completed:** 0
 

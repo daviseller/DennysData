@@ -3,7 +3,7 @@
 ## Overview
 
 **Goal:** NBA box scores website - browse games by date, view detailed stats
-**Status:** Not Started
+**Status:** In Progress
 **Created:** 2026-01-30
 
 ## Tech Stack
@@ -24,7 +24,7 @@ See [design-system.md](design-system.md) for full details.
 
 - Dark mode default
 - Sports broadcast aesthetic
-- Fonts: DM Sans (display) + JetBrains Mono (stats)
+- Fonts: IBM Plex Sans (display) + IBM Plex Mono (stats)
 - Mobile-first, data-dense
 
 ## MVP Scope
@@ -46,17 +46,19 @@ See [design-system.md](design-system.md) for full details.
 
 ## Phases
 
-### Phase 1: Project Scaffolding
-- [ ] SvelteKit + Bun init
-- [ ] Design tokens (CSS variables, themes)
-- [ ] Base styles (reset, typography)
-- [ ] Vercel deployment
-- [ ] Environment config
+### Phase 1: Project Scaffolding ✓
+- [x] SvelteKit + Bun init
+- [x] Design tokens (CSS variables, themes)
+- [x] Base styles (reset, typography)
+- [x] Vercel deployment
+- [x] Environment config
 
-### Phase 2: API Integration
-- [ ] Server routes for balldontlie.io
-- [ ] TypeScript types for API responses
-- [ ] Error handling
+### Phase 2: API Integration ✓
+- [x] Server routes for balldontlie.io
+- [x] TypeScript types for API responses
+- [x] NBA team colors (2 hex codes per team)
+- [x] Error handling
+- [x] Client fetch helpers
 
 ### Phase 3: Day Picker & Games List
 - [ ] Day picker component

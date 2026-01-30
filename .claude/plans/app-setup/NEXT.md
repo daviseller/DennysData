@@ -1,54 +1,57 @@
 # Next Session: app-setup
 
-## Focus: Phase 1 - Project Scaffolding
+## Focus: Phase 3 - Day Picker & Games List
 
 ### Objectives
 
-1. Initialize SvelteKit project with Bun
-2. Set up design tokens and base styles
-3. Set up environment for API key
-4. Deploy to Vercel (basic)
+1. Build the day picker component
+2. Create game cards showing scores and teams
+3. Wire up to live API data
+4. Implement responsive layout
 
 ### Pre-Session Checklist
 
-- [ ] Bun installed (`bun --version`)
-- [ ] Vercel account ready
-- [ ] balldontlie.io API key obtained
+- [x] API key configured in `.env.local`
+- [x] API routes tested and working
 
-### Commands
-
-```bash
-# Init SvelteKit (skeleton, TypeScript)
-bun create svelte@latest .
-
-# Install deps
-bun install
-
-# Run dev
-bun run dev
-```
-
-### File Structure to Create
+### Components to Create
 
 ```
-src/lib/styles/
-├── tokens.css    # CSS variables, all 10 themes
-└── base.css      # Reset, typography, global styles
+src/lib/components/
+├── DayPicker.svelte      # Date navigation
+├── GameCard.svelte       # Individual game display
+└── GamesList.svelte      # Container for game cards
 ```
 
-### Environment Setup
+### Day Picker Requirements
 
-```bash
-# .env.local
-BALLDONTLIE_API_KEY=your_key_here
+- Default to today's date
+- Left/right arrow buttons for ±1 day
+- Click date to open calendar picker (optional)
+- Display: "Friday, Jan 30, 2026"
+
+### Game Card Requirements
+
+- Show team abbreviations with colors
+- Display score (or scheduled time if not started)
+- Status indicator (Final, Live, Scheduled)
+- Click to navigate to `/game/[id]`
+
+### Data Flow
+
 ```
-
-Add to Vercel dashboard after first deploy.
++page.svelte
+  ├── DayPicker (controls selectedDate)
+  ├── GamesList
+  │     └── GameCard (for each game)
+  └── Uses $lib/api.ts to fetch
+```
 
 ### Deliverables
 
-- [ ] SvelteKit running locally
-- [ ] Design tokens working (themes switchable)
-- [ ] Base typography with IBM Plex fonts
-- [ ] Deployed to Vercel
-- [ ] Env var configured
+- [ ] DayPicker component
+- [ ] GameCard component
+- [ ] GamesList component
+- [ ] Home page wired to API
+- [ ] Responsive layout (mobile-first)
+- [ ] Loading and error states
