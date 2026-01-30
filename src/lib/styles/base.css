@@ -1,0 +1,443 @@
+/* ==========================================================================
+   Base Styles - DennysData
+   "The scoreboard doesn't decorate. It reports."
+   ========================================================================== */
+
+/* Google Fonts - IBM Plex */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+/* ==========================================================================
+   Reset
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-app);
+  min-height: 100vh;
+}
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 16px;
+}
+
+h4 {
+  font-size: 14px;
+}
+
+/* Labels - Uppercase treatment */
+.label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Stats/Numbers - Monospace */
+.mono,
+.stat,
+.score {
+  font-family: var(--font-stats);
+  font-variant-numeric: tabular-nums;
+}
+
+.score {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Team abbreviations */
+.team-abbr {
+  font-family: var(--font-stats);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   Links
+   ========================================================================== */
+
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-secondary);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: 6px 12px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-primary);
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.btn-icon {
+  padding: 6px;
+  min-width: 32px;
+}
+
+/* ==========================================================================
+   Cards & Panels
+   ========================================================================== */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+}
+
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+}
+
+.panel-header {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.panel-header .label {
+  margin: 0;
+}
+
+.panel-body {
+  padding: var(--space-md);
+}
+
+/* Inset areas */
+.inset {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-muted);
+  position: sticky;
+  top: 0;
+}
+
+th.number,
+td.number {
+  text-align: right;
+  font-family: var(--font-stats);
+  font-variant-numeric: tabular-nums;
+}
+
+td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-secondary);
+  color: var(--text-primary);
+}
+
+tr:hover td {
+  background: var(--bg-card-hover);
+}
+
+/* Stat highlighting */
+.stat-positive {
+  color: var(--stat-positive);
+}
+
+.stat-negative {
+  color: var(--stat-negative);
+}
+
+.stat-leader {
+  color: var(--stat-leader);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Status Indicators (LED style)
+   ========================================================================== */
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-live .status-dot {
+  background: var(--status-live);
+  box-shadow: 0 0 8px var(--status-live-glow);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-live {
+  color: var(--status-live);
+}
+
+.status-final .status-dot {
+  background: var(--status-final);
+  border: 1px solid var(--status-final);
+  background: transparent;
+}
+
+.status-final {
+  color: var(--status-final);
+}
+
+.status-scheduled .status-dot {
+  background: transparent;
+  border: 1px solid var(--status-scheduled);
+}
+
+.status-scheduled {
+  color: var(--status-scheduled);
+}
+
+.status-halftime .status-dot {
+  background: var(--status-halftime);
+}
+
+.status-halftime {
+  color: var(--status-halftime);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ==========================================================================
+   Forms
+   ========================================================================== */
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+
+.bg-app { background: var(--bg-app); }
+.bg-card { background: var(--bg-card); }
+.bg-inset { background: var(--bg-inset); }
+
+/* Spacing utilities */
+.mt-xs { margin-top: var(--space-xs); }
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+
+.mb-xs { margin-bottom: var(--space-xs); }
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-lg { margin-bottom: var(--space-lg); }
+
+.p-sm { padding: var(--space-sm); }
+.p-md { padding: var(--space-md); }
+.p-lg { padding: var(--space-lg); }
+
+/* Flex utilities */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-xs { gap: var(--space-xs); }
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+
+/* Grid */
+.grid { display: grid; }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  body {
+    font-size: 13px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  .score {
+    font-size: 20px;
+  }
+
+  .grid-cols-2,
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

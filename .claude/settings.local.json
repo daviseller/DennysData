@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [],
+    "deny": [],
+    "defaultMode": "acceptEdits"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": ".claude\\status_lines\\run_status_line.bat"
+  }
+}
