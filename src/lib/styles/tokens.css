@@ -23,6 +23,34 @@
   /* Transitions */
   --transition-fast: 100ms ease;
   --transition-base: 200ms ease;
+
+  /* ==========================================================================
+     Default Theme (Arena) - Applied when no data-theme is set
+     ========================================================================== */
+  --bg-app: #f8f8f8;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0f0f0;
+  --bg-inset: #eaeaea;
+
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+
+  --border-primary: #d0d0d0;
+  --border-secondary: #e8e8e8;
+
+  --status-live: #dc2626;
+  --status-live-glow: rgba(220, 38, 38, 0.3);
+  --status-final: #888888;
+  --status-scheduled: #555555;
+  --status-halftime: #d97706;
+
+  --stat-positive: #16a34a;
+  --stat-negative: #dc2626;
+  --stat-leader: #d97706;
+
+  --accent-primary: #2563eb;
+  --accent-secondary: #3b82f6;
 }
 
 /* ==========================================================================
@@ -173,9 +201,8 @@
    Light Themes
    ========================================================================== */
 
-/* Arena (Default Light) - Bright stadium lighting, clean whites */
-[data-theme="arena"],
-:root {
+/* Arena - Bright stadium lighting, clean whites */
+[data-theme="arena"] {
   --bg-app: #f8f8f8;
   --bg-card: #ffffff;
   --bg-card-hover: #f0f0f0;
