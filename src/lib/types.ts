@@ -154,6 +154,13 @@ export interface ApiError {
 
 export type ApiResult<T> = { data: T; error: null } | { data: null; error: ApiError };
 
+// Player injury info
+export interface PlayerInjury {
+	status: string; // "Out", "Doubtful", "Questionable", "Probable"
+	return_date: string | null;
+	description: string | null;
+}
+
 // Player season stats (from our database)
 export interface PlayerSeasonStats {
 	player: {
@@ -164,6 +171,7 @@ export interface PlayerSeasonStats {
 		position: string | null;
 		jersey_number: string | null;
 	};
+	injury: PlayerInjury | null;
 	season: number;
 	games_played: number;
 	min: number | null;

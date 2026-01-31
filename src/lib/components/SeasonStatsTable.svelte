@@ -173,11 +173,16 @@
 			</thead>
 			<tbody>
 				{#each sortedPlayers as player (player.player.id)}
-					<tr>
+					<tr class:injured={player.injury}>
 						<td class="col-player">
 							<span class="player-name">
 								{player.player.first_name.charAt(0)}. {player.player.last_name}
 							</span>
+							{#if player.injury}
+								<span class="injury-badge injury-{player.injury.status.toLowerCase()}" title={player.injury.description || player.injury.status}>
+									{player.injury.status === 'Out' ? 'OUT' : player.injury.status === 'Doubtful' ? 'DTD' : player.injury.status === 'Questionable' ? 'GTD' : player.injury.status.substring(0, 3).toUpperCase()}
+								</span>
+							{/if}
 						</td>
 						<td class="col-stat">{player.games_played}</td>
 						<td class="col-stat">{formatStat(player.min)}</td>
@@ -309,6 +314,45 @@
 	.player-name {
 		color: var(--text-primary);
 		font-weight: 500;
+	}
+
+	.injury-badge {
+		display: inline-block;
+		margin-left: var(--space-xs);
+		padding: 1px 4px;
+		font-size: 9px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		border-radius: 2px;
+		vertical-align: middle;
+	}
+
+	.injury-out {
+		background: var(--stat-negative);
+		color: white;
+	}
+
+	.injury-doubtful {
+		background: #c9553d;
+		color: white;
+	}
+
+	.injury-questionable {
+		background: #d4a017;
+		color: #1a1a1a;
+	}
+
+	.injury-probable {
+		background: var(--text-muted);
+		color: var(--bg-card);
+	}
+
+	tr.injured {
+		opacity: 0.7;
+	}
+
+	tr.injured:hover {
+		opacity: 1;
 	}
 
 	.col-stat {

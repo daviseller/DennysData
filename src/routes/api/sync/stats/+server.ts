@@ -225,6 +225,35 @@ async function syncTeamSeasonStats(apiKey: string, season: number): Promise<numb
 	return stats.length;
 }
 
+// Sync player injuries
+async function syncInjuries(apiKey: string): Promise<number> {
+	// First, clear old injuries (injuries change daily)
+	await supabase.from('player_injuries').delete().neq('player_id', 0);
+
+	const injuries = await fetchAllPages<any>(
+		`${API_BASE}/player_injuries?per_page=100`,
+		apiKey,
+		20
+	);
+
+	// Batch upsert in chunks
+	const chunkSize = 100;
+	for (let i = 0; i < injuries.length; i += chunkSize) {
+		const chunk = injuries.slice(i, i + chunkSize);
+		const rows = chunk.map((inj) => ({
+			player_id: inj.player.id,
+			status: inj.status,
+			return_date: inj.return_date || null,
+			description: inj.description || null,
+			updated_at: new Date().toISOString()
+		}));
+
+		await supabase.from('player_injuries').upsert(rows, { onConflict: 'player_id' });
+	}
+
+	return injuries.length;
+}
+
 export const POST: RequestHandler = async ({ url, request }) => {
 	// Verify this is a legitimate cron request
 	if (!verifyCronRequest(request)) {
@@ -238,7 +267,7 @@ export const POST: RequestHandler = async ({ url, request }) => {
 	}
 
 	const season = parseInt(url.searchParams.get('season') || '') || getCurrentSeason();
-	const only = url.searchParams.get('only'); // Optional: 'teams', 'players', 'player_stats', 'team_stats'
+	const only = url.searchParams.get('only'); // Optional: 'teams', 'players', 'player_stats', 'team_stats', 'injuries'
 
 	const results: Record<string, number | string> = {
 		season,
@@ -260,6 +289,10 @@ export const POST: RequestHandler = async ({ url, request }) => {
 
 		if (!only || only === 'team_stats') {
 			results.team_stats = await syncTeamSeasonStats(apiKey, season);
+		}
+
+		if (!only || only === 'injuries') {
+			results.injuries = await syncInjuries(apiKey);
 		}
 
 		results.completed_at = new Date().toISOString();
