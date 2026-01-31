@@ -24,10 +24,23 @@
 	let error = $state<string | null>(null);
 	let selectedGame = $state<Game | null>(null);
 	let themeDropdownOpen = $state(false);
+	let initialDateResolved = $state(false);
 
 	// Track pending request to cancel on new requests
 	let gamesAbortController: AbortController | null = null;
 	let gamesRefreshInterval: ReturnType<typeof setInterval> | null = null;
+
+	// For testing: ?testTime=2026-01-31T08:00:00 to simulate different times
+	function getTestTime(): Date {
+		if (typeof window === 'undefined') return new Date();
+		const params = new URLSearchParams(window.location.search);
+		const testTime = params.get('testTime');
+		if (testTime) {
+			const parsed = new Date(testTime);
+			if (!isNaN(parsed.getTime())) return parsed;
+		}
+		return new Date();
+	}
 
 	const themes = [
 		{ id: 'arena', name: 'Arena', type: 'light' },
@@ -88,45 +101,8 @@
 				games = [];
 			}
 		} else {
-			// Sort games: Live first (by period desc), then Upcoming (by time), then Finished
 			const rawGames = result.data?.data ?? [];
-			games = rawGames.sort((a, b) => {
-				const aIsLive = a.period > 0 && a.time && a.status !== 'Final';
-				const bIsLive = b.period > 0 && b.time && b.status !== 'Final';
-				const aIsFinal = a.status === 'Final';
-				const bIsFinal = b.status === 'Final';
-
-				// Live games first
-				if (aIsLive && !bIsLive) return -1;
-				if (!aIsLive && bIsLive) return 1;
-
-				// Finished games last
-				if (aIsFinal && !bIsFinal) return 1;
-				if (!aIsFinal && bIsFinal) return -1;
-
-				// Within live games, sort by period desc, then time remaining asc
-				if (aIsLive && bIsLive) {
-					if (a.period !== b.period) {
-						return b.period - a.period;
-					}
-					// Parse time remaining (e.g., "5:30" or "Q1 5:30")
-					const parseTime = (t: string) => {
-						const match = t.match(/(\d+):(\d+)/);
-						if (!match) return 999;
-						return parseInt(match[1]) * 60 + parseInt(match[2]);
-					};
-					return parseTime(a.time) - parseTime(b.time);
-				}
-
-				// Within scheduled/finished games, sort by start time or ID
-				const timeA = new Date(a.status).getTime();
-				const timeB = new Date(b.status).getTime();
-				if (!isNaN(timeA) && !isNaN(timeB)) {
-					return timeA - timeB;
-				}
-				// Fallback to ID order
-				return a.id - b.id;
-			});
+			games = sortGames(rawGames);
 		}
 
 		if (!silent) {
@@ -170,9 +146,121 @@
 		document.documentElement.setAttribute('data-theme', currentTheme);
 	});
 
-	// Load games on mount
+	// Smart date initialization - find the day with live or upcoming games
+	// Works across timezones by checking both today and yesterday
+	async function initializeDate() {
+		const now = getTestTime();
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const yesterday = new Date(today);
+		yesterday.setDate(today.getDate() - 1);
+
+		loading = true;
+
+		// Fetch both days in parallel
+		const [todayResult, yesterdayResult] = await Promise.all([
+			fetchGames(formatDateForApi(today)),
+			fetchGames(formatDateForApi(yesterday))
+		]);
+
+		const todayGames = todayResult.data?.data ?? [];
+		const yesterdayGames = yesterdayResult.data?.data ?? [];
+
+		// Priority 1: Show day with live games
+		if (hasLiveGamesInList(todayGames)) {
+			selectedDate = today;
+			games = sortGames(todayGames);
+			loading = false;
+			initialDateResolved = true;
+			return;
+		}
+
+		if (hasLiveGamesInList(yesterdayGames)) {
+			selectedDate = yesterday;
+			games = sortGames(yesterdayGames);
+			loading = false;
+			initialDateResolved = true;
+			return;
+		}
+
+		// Priority 2: Show day with games starting within 4 hours
+		if (hasUpcomingGames(todayGames, now)) {
+			selectedDate = today;
+			games = sortGames(todayGames);
+			loading = false;
+			initialDateResolved = true;
+			return;
+		}
+
+		// Priority 3: Show yesterday (most recent completed games)
+		if (yesterdayGames.length > 0) {
+			selectedDate = yesterday;
+			games = sortGames(yesterdayGames);
+			loading = false;
+			initialDateResolved = true;
+			return;
+		}
+
+		// Fallback: Show today
+		selectedDate = today;
+		games = sortGames(todayGames);
+		loading = false;
+		initialDateResolved = true;
+	}
+
+	function hasLiveGamesInList(gamesList: Game[]): boolean {
+		return gamesList.some(g => g.period > 0 && g.status !== 'Final');
+	}
+
+	function hasUpcomingGames(gamesList: Game[], now: Date): boolean {
+		const fourHoursFromNow = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+		return gamesList.some(g => {
+			if (g.status === 'Final') return false;
+			const gameTime = new Date(g.datetime);
+			return !isNaN(gameTime.getTime()) && gameTime <= fourHoursFromNow && gameTime > now;
+		});
+	}
+
+	function sortGames(rawGames: Game[]): Game[] {
+		return rawGames.sort((a, b) => {
+			const aIsLive = a.period > 0 && a.time && a.status !== 'Final';
+			const bIsLive = b.period > 0 && b.time && b.status !== 'Final';
+			const aIsFinal = a.status === 'Final';
+			const bIsFinal = b.status === 'Final';
+
+			// Live games first
+			if (aIsLive && !bIsLive) return -1;
+			if (!aIsLive && bIsLive) return 1;
+
+			// Finished games last
+			if (aIsFinal && !bIsFinal) return 1;
+			if (!aIsFinal && bIsFinal) return -1;
+
+			// Within live games, sort by period desc, then time remaining asc
+			if (aIsLive && bIsLive) {
+				if (a.period !== b.period) {
+					return b.period - a.period;
+				}
+				const parseTime = (t: string) => {
+					const match = t.match(/(\d+):(\d+)/);
+					if (!match) return 999;
+					return parseInt(match[1]) * 60 + parseInt(match[2]);
+				};
+				return parseTime(a.time) - parseTime(b.time);
+			}
+
+			// Within scheduled/finished games, sort by start time or ID
+			const timeA = new Date(a.status).getTime();
+			const timeB = new Date(b.status).getTime();
+			if (!isNaN(timeA) && !isNaN(timeB)) {
+				return timeA - timeB;
+			}
+			return a.id - b.id;
+		});
+	}
+
+	// Initialize on mount
 	$effect(() => {
-		loadGames(selectedDate);
+		initializeDate();
 	});
 
 	// Auto-refresh games list when there are live games

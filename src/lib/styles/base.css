@@ -467,6 +467,7 @@ tr:hover td {
   background: var(--border-primary);
   border-radius: 4px;
   border: 2px solid var(--bg-inset);
+  border-left-width: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

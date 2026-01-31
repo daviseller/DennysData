@@ -105,12 +105,13 @@
 		return maxVal > 0 ? maxId : -1;
 	}
 
-	// Filter out players with 0:00 minutes (didn't play)
+	// Filter out players with 0 minutes (didn't play)
 	const activePlayers = $derived(players.filter(p => {
 		if (!p.min) return false;
+		// Handle both plain minutes ("26") and MM:SS format ("26:34")
 		const parts = p.min.split(':');
 		const mins = parseInt(parts[0]) || 0;
-		const secs = parseInt(parts[1]) || 0;
+		const secs = parts.length > 1 ? (parseInt(parts[1]) || 0) : 0;
 		return mins > 0 || secs > 0;
 	}));
 	const sortedPlayers = $derived(sortPlayers(activePlayers, sortKey, sortDir));
@@ -120,9 +121,14 @@
 
 	function formatMinutes(min: string): string {
 		if (!min) return '-';
-		// Format as M:SS (remove leading zero from minutes if present)
+		// Handle both plain minutes ("26") and MM:SS format ("26:34")
 		const parts = min.split(':');
-		if (parts.length < 2) return min;
+		if (parts.length < 2) {
+			// Plain minutes - remove leading zero
+			const mins = parseInt(min) || 0;
+			return String(mins);
+		}
+		// MM:SS format - remove leading zero from minutes
 		const mins = parseInt(parts[0]) || 0;
 		const secs = parts[1].padStart(2, '0');
 		return `${mins}:${secs}`;
