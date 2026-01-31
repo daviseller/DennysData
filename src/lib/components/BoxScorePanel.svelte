@@ -114,11 +114,17 @@
 	const game = $derived(boxScore?.game);
 	const status = $derived(game ? getGameStatus(game) : 'scheduled');
 	const statusText = $derived(game ? getStatusText(game) : '');
-	const gameDate = $derived(game ? new Date(game.date).toLocaleDateString('en-US', {
-		weekday: 'short',
-		month: 'short',
-		day: 'numeric'
-	}).toUpperCase() : '');
+	const gameDate = $derived(game ? (() => {
+		// Parse date as local time to avoid timezone shift
+		// game.date is "YYYY-MM-DD" - parsing directly treats it as UTC
+		const [year, month, day] = game.date.split('-').map(Number);
+		const date = new Date(year, month - 1, day);
+		return date.toLocaleDateString('en-US', {
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric'
+		}).toUpperCase();
+	})() : '');
 	const homeColors = $derived(game ? getTeamColors(game.home_team.abbreviation) : { primary: '#666', secondary: '#333' });
 	const visitorColors = $derived(game ? getTeamColors(game.visitor_team.abbreviation) : { primary: '#666', secondary: '#333' });
 	const hasStats = $derived(boxScore && (boxScore.home_team.players.length > 0 || boxScore.visitor_team.players.length > 0));
