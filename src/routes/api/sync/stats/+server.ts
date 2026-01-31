@@ -1,7 +1,19 @@
 import { json, error } from '@sveltejs/kit';
-import { BALLDONTLIE_API_KEY } from '$env/static/private';
+import { BALLDONTLIE_API_KEY, CRON_SECRET } from '$env/static/private';
 import { supabase } from '$lib/supabase';
 import type { RequestHandler } from './$types';
+
+// Verify cron request (Vercel sends Authorization header)
+function verifyCronRequest(request: Request): boolean {
+	// In development, allow all requests
+	if (process.env.NODE_ENV === 'development') return true;
+
+	// Check for Vercel cron secret
+	const authHeader = request.headers.get('authorization');
+	if (authHeader === `Bearer ${CRON_SECRET}`) return true;
+
+	return false;
+}
 
 const API_BASE = 'https://api.balldontlie.io/v1';
 
@@ -213,7 +225,12 @@ async function syncTeamSeasonStats(apiKey: string, season: number): Promise<numb
 	return stats.length;
 }
 
-export const POST: RequestHandler = async ({ url }) => {
+export const POST: RequestHandler = async ({ url, request }) => {
+	// Verify this is a legitimate cron request
+	if (!verifyCronRequest(request)) {
+		throw error(401, 'Unauthorized');
+	}
+
 	const apiKey = BALLDONTLIE_API_KEY;
 
 	if (!apiKey) {
