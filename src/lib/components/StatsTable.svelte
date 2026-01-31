@@ -9,9 +9,16 @@
 		teamAbbr?: string;
 		showTeamColumn?: boolean;
 		starters?: Set<number>;
+		onPlayerClick?: (playerId: number) => void;
 	}
 
-	let { players, totals, teamColor, teamAbbr, showTeamColumn = false, starters = new Set() }: Props = $props();
+	let { players, totals, teamColor, teamAbbr, showTeamColumn = false, starters = new Set(), onPlayerClick }: Props = $props();
+
+	function handlePlayerClick(playerId: number) {
+		if (onPlayerClick) {
+			onPlayerClick(playerId);
+		}
+	}
 
 	type SortKey = 'name' | 'min' | 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'fg' | 'fg3' | 'ft';
 	type SortDir = 'asc' | 'desc';
@@ -250,9 +257,12 @@
 							</td>
 						{/if}
 						<td class="col-player">
-							<span class="player-name">
+							<button
+								class="player-name-btn"
+								onclick={() => handlePlayerClick(player.player.id)}
+							>
 								{player.player.first_name.charAt(0)}. {player.player.last_name}
-							</span>
+							</button>
 							{#if starters.has(player.player.id)}
 								<span class="starter-badge">S</span>
 							{/if}
@@ -418,9 +428,21 @@
 		padding-left: var(--space-md);
 	}
 
-	.player-name {
-		color: var(--text-primary);
+	.player-name-btn {
+		background: none;
+		border: none;
+		padding: 0;
+		font: inherit;
 		font-weight: 500;
+		color: var(--text-primary);
+		cursor: pointer;
+		text-align: left;
+		transition: color var(--transition-fast);
+	}
+
+	.player-name-btn:hover {
+		color: var(--accent-primary);
+		text-decoration: underline;
 	}
 
 	.starter-badge {

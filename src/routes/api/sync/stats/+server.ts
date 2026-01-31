@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
-import { BALLDONTLIE_API_KEY, CRON_SECRET } from '$env/static/private';
+import { BALLDONTLIE_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { supabase } from '$lib/supabase';
 import type { RequestHandler } from './$types';
 
@@ -8,9 +9,12 @@ function verifyCronRequest(request: Request): boolean {
 	// In development, allow all requests
 	if (process.env.NODE_ENV === 'development') return true;
 
-	// Check for Vercel cron secret
+	// Check for Vercel cron secret (only required in production)
+	const cronSecret = env.CRON_SECRET;
+	if (!cronSecret) return false;
+
 	const authHeader = request.headers.get('authorization');
-	if (authHeader === `Bearer ${CRON_SECRET}`) return true;
+	if (authHeader === `Bearer ${cronSecret}`) return true;
 
 	return false;
 }
@@ -150,6 +154,7 @@ async function syncPlayerSeasonStats(apiKey: string, season: number): Promise<nu
 		const rows = chunk.map((s) => ({
 			player_id: s.player.id,
 			season: s.season,
+			team_id: s.player.team?.id || null,
 			games_played: s.stats.gp || 0,
 			min: s.stats.min || null,
 			pts: s.stats.pts || null,
@@ -173,7 +178,7 @@ async function syncPlayerSeasonStats(apiKey: string, season: number): Promise<nu
 			updated_at: new Date().toISOString()
 		}));
 
-		await supabase.from('player_season_stats').upsert(rows, { onConflict: 'player_id,season' });
+		await supabase.from('player_season_stats').upsert(rows, { onConflict: 'player_id,season,team_id' });
 	}
 
 	return stats.length;

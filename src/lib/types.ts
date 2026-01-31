@@ -219,3 +219,49 @@ export interface LineupsResponse {
 	data: LineupPlayer[];
 	starters: number[]; // Player IDs of starters for easy lookup
 }
+
+// Player profile types
+export interface PlayerProfile {
+	id: number;
+	first_name: string;
+	last_name: string;
+	position: string | null;
+	height: string | null;
+	weight: string | null;
+	jersey_number: string | null;
+	country: string | null;
+	draft_year: number | null;
+	draft_round: number | null;
+	draft_number: number | null;
+	team: Team | null;
+}
+
+export interface PlayerCareerSeason {
+	season: number;
+	team: Team | null;
+	games_played: number;
+	min: number | null;
+	pts: number | null;
+	reb: number | null;
+	ast: number | null;
+	stl: number | null;
+	blk: number | null;
+	turnover: number | null;
+	fgm: number | null;
+	fga: number | null;
+	fg_pct: number | null;
+	fg3m: number | null;
+	fg3a: number | null;
+	fg3_pct: number | null;
+	ftm: number | null;
+	fta: number | null;
+	ft_pct: number | null;
+	oreb: number | null;
+	dreb: number | null;
+}
+
+export interface PlayerProfileResponse {
+	player: PlayerProfile;
+	seasons: PlayerCareerSeason[];
+	injury: PlayerInjury | null;
+}

@@ -13,9 +13,10 @@
 		showInlineBoxScore?: boolean;
 		onSelectGame?: (game: Game) => void;
 		onRetry?: () => void;
+		onPlayerClick?: (playerId: number) => void;
 	}
 
-	let { games, standings = {}, loading, error, selectedGameId = null, showInlineBoxScore = true, onSelectGame, onRetry }: Props = $props();
+	let { games, standings = {}, loading, error, selectedGameId = null, showInlineBoxScore = true, onSelectGame, onRetry, onPlayerClick }: Props = $props();
 
 	function handleGameSelect(game: Game) {
 		if (onSelectGame) {
@@ -113,7 +114,7 @@
 				/>
 				{#if showInlineBoxScore && selectedGameId === game.id}
 					<div class="inline-boxscore">
-						<BoxScorePanel gameId={game.id} game={game} />
+						<BoxScorePanel gameId={game.id} game={game} {onPlayerClick} />
 					</div>
 				{/if}
 			</div>

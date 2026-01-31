@@ -7,9 +7,16 @@
 		players: PlayerSeasonStats[];
 		teamAbbr: string;
 		teamId: number;
+		onPlayerClick?: (playerId: number) => void;
 	}
 
-	let { players, teamAbbr, teamId }: Props = $props();
+	let { players, teamAbbr, teamId, onPlayerClick }: Props = $props();
+
+	function handlePlayerClick(playerId: number) {
+		if (onPlayerClick) {
+			onPlayerClick(playerId);
+		}
+	}
 
 	type SortKey = 'name' | 'gp' | 'min' | 'pts' | 'reb' | 'ast' | 'fg_pct' | 'fg3_pct';
 	type SortDir = 'asc' | 'desc';
@@ -196,9 +203,12 @@
 				{#each sortedPlayers as player (player.player.id)}
 					<tr class:injured={player.injury}>
 						<td class="col-player">
-							<span class="player-name">
+							<button
+								class="player-name-btn"
+								onclick={() => handlePlayerClick(player.player.id)}
+							>
 								{player.player.first_name.charAt(0)}. {player.player.last_name}
-							</span>
+							</button>
 							{#if player.injury}
 								<Tooltip content={formatInjuryTooltip(player.injury)} position="right">
 									{#snippet children()}
@@ -336,9 +346,21 @@
 		padding-left: var(--space-md);
 	}
 
-	.player-name {
-		color: var(--text-primary);
+	.player-name-btn {
+		background: none;
+		border: none;
+		padding: 0;
+		font: inherit;
 		font-weight: 500;
+		color: var(--text-primary);
+		cursor: pointer;
+		text-align: left;
+		transition: color var(--transition-fast);
+	}
+
+	.player-name-btn:hover {
+		color: var(--accent-primary);
+		text-decoration: underline;
 	}
 
 	.injury-badge {

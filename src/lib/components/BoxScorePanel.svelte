@@ -15,9 +15,10 @@
 	interface Props {
 		gameId: number;
 		game?: Game; // Pass game data to know if it's scheduled
+		onPlayerClick?: (playerId: number) => void;
 	}
 
-	let { gameId, game: initialGame }: Props = $props();
+	let { gameId, game: initialGame, onPlayerClick }: Props = $props();
 
 	let boxScore = $state<BoxScore | null>(null);
 	let seasonStats = $state<PlayerSeasonStats[]>([]);
@@ -292,6 +293,7 @@
 				players={seasonStats}
 				teamAbbr={schedGame.visitor_team.abbreviation}
 				teamId={schedGame.visitor_team.id}
+				{onPlayerClick}
 			/>
 		</section>
 
@@ -300,6 +302,7 @@
 				players={seasonStats}
 				teamAbbr={schedGame.home_team.abbreviation}
 				teamId={schedGame.home_team.id}
+				{onPlayerClick}
 			/>
 		</section>
 	{:else if boxScore && game}
@@ -364,6 +367,7 @@
 						players={combinedPlayers}
 						showTeamColumn={true}
 						{starters}
+						{onPlayerClick}
 					/>
 				</section>
 			{:else}
@@ -374,6 +378,7 @@
 						teamColor={visitorColors.primary}
 						teamAbbr={game.visitor_team.abbreviation}
 						{starters}
+						{onPlayerClick}
 					/>
 				</section>
 
@@ -384,6 +389,7 @@
 						teamColor={homeColors.primary}
 						teamAbbr={game.home_team.abbreviation}
 						{starters}
+						{onPlayerClick}
 					/>
 				</section>
 			{/if}

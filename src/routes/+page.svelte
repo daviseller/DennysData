@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { fetchGames, fetchStandings, formatDateForApi } from '$lib/api';
 	import type { Game, StandingsMap } from '$lib/types';
 	import DayPicker from '$lib/components/DayPicker.svelte';
 	import GamesList from '$lib/components/GamesList.svelte';
 	import BoxScorePanel from '$lib/components/BoxScorePanel.svelte';
+	import PlayerSlidePanel from '$lib/components/PlayerSlidePanel.svelte';
 
 	function getStoredTheme(): string {
 		if (typeof document === 'undefined') return 'arena';
@@ -25,6 +27,7 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let selectedGame = $state<Game | null>(null);
+	let selectedPlayerId = $state<number | null>(null);
 	let themeDropdownOpen = $state(false);
 	let initialDateResolved = $state(false);
 	let isMobile = $state(false);
@@ -142,6 +145,20 @@
 
 	function handleCloseBoxScore() {
 		selectedGame = null;
+	}
+
+	function handlePlayerClick(playerId: number) {
+		if (isMobile) {
+			// On mobile, navigate to the player page
+			goto(`/player/${playerId}`);
+		} else {
+			// On desktop, open the slide-in panel
+			selectedPlayerId = playerId;
+		}
+	}
+
+	function handleClosePlayerPanel() {
+		selectedPlayerId = null;
 	}
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
@@ -428,6 +445,7 @@
 				showInlineBoxScore={isMobile}
 				onSelectGame={handleSelectGame}
 				onRetry={() => loadGames(selectedDate)}
+				onPlayerClick={handlePlayerClick}
 			/>
 		</section>
 
@@ -442,12 +460,14 @@
 					</button>
 				</div>
 				<div class="sidebar-content">
-					<BoxScorePanel gameId={selectedGameId} game={selectedGame} />
+					<BoxScorePanel gameId={selectedGameId} game={selectedGame} onPlayerClick={handlePlayerClick} />
 				</div>
 			</aside>
 		{/if}
 	</div>
 </div>
+
+<PlayerSlidePanel playerId={selectedPlayerId} onClose={handleClosePlayerPanel} />
 
 <style>
 	.page-wrapper {
