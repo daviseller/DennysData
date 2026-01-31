@@ -1,14 +1,33 @@
 <script lang="ts">
-	import type { Game } from '$lib/types';
+	import type { Game, StandingsMap } from '$lib/types';
 	import { getTeamColors } from '$lib/team-colors';
 
 	interface Props {
 		game: Game;
+		standings?: StandingsMap;
 		selected?: boolean;
 		onSelect?: (game: Game) => void;
 	}
 
-	let { game, selected = false, onSelect }: Props = $props();
+	let { game, standings = {}, selected = false, onSelect }: Props = $props();
+
+	function formatRecord(abbr: string): string {
+		const record = standings[abbr];
+		if (!record) return '';
+		return `${record.wins}-${record.losses}`;
+	}
+
+	function formatConferenceRank(abbr: string): string {
+		const record = standings[abbr];
+		if (!record || !record.conference_rank) return '';
+		const conf = record.conference === 'East' ? 'East' : 'West';
+		return `${conf} #${record.conference_rank}`;
+	}
+
+	const homeRecord = $derived(formatRecord(game.home_team.abbreviation));
+	const visitorRecord = $derived(formatRecord(game.visitor_team.abbreviation));
+	const homeConfRank = $derived(formatConferenceRank(game.home_team.abbreviation));
+	const visitorConfRank = $derived(formatConferenceRank(game.visitor_team.abbreviation));
 
 	type GameStatus = 'live' | 'final' | 'scheduled';
 
@@ -76,14 +95,28 @@
 	<div class="game-teams" class:has-result={status === 'final'}>
 		<div class="team-row" class:winner={winner === 'visitor'}>
 			<span class="team-color" class:muted={status === 'final' && winner === 'home'} style="background: linear-gradient(135deg, {visitorColors.primary} 49%, {visitorColors.secondary} 51%)"></span>
-			<span class="team-abbr">{game.visitor_team.abbreviation}</span>
+			<span class="team-name">{game.visitor_team.name}</span>
+			{#if visitorRecord}
+				<span class="team-info">
+					<span class="team-record">{visitorRecord}</span>
+					<span class="info-dot">·</span>
+					<span class="team-conf">{visitorConfRank}</span>
+				</span>
+			{/if}
 			<span class="score" class:stat-leader={winner === 'visitor'}>
 				{status === 'scheduled' ? '-' : game.visitor_team_score}
 			</span>
 		</div>
 		<div class="team-row" class:winner={winner === 'home'}>
 			<span class="team-color" class:muted={status === 'final' && winner === 'visitor'} style="background: linear-gradient(135deg, {homeColors.primary} 49%, {homeColors.secondary} 51%)"></span>
-			<span class="team-abbr">{game.home_team.abbreviation}</span>
+			<span class="team-name">{game.home_team.name}</span>
+			{#if homeRecord}
+				<span class="team-info">
+					<span class="team-record">{homeRecord}</span>
+					<span class="info-dot">·</span>
+					<span class="team-conf">{homeConfRank}</span>
+				</span>
+			{/if}
 			<span class="score" class:stat-leader={winner === 'home'}>
 				{status === 'scheduled' ? '-' : game.home_team_score}
 			</span>
@@ -184,22 +217,47 @@
 		opacity: 0.4;
 	}
 
-	.team-abbr {
-		flex: 1;
-		font-family: var(--font-stats);
+	.team-name {
+		font-family: var(--font-display);
 		font-size: 14px;
 		font-weight: 600;
-		letter-spacing: 0.02em;
 		color: var(--text-primary);
 	}
 
-	.winner .team-abbr {
+	.team-info {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		margin-left: var(--space-xs);
+		font-family: var(--font-stats);
+		font-size: 11px;
+		color: var(--text-muted);
+	}
+
+	.team-record {
+		font-weight: 400;
+	}
+
+	.info-dot {
+		opacity: 0.5;
+	}
+
+	.team-conf {
+		font-weight: 400;
+	}
+
+	.winner .team-name {
 		color: var(--text-primary);
 	}
 
 	/* Only mute losing team when game has a result */
-	.has-result .team-row:not(.winner) .team-abbr {
+	.has-result .team-row:not(.winner) .team-name {
 		color: var(--text-muted);
+	}
+
+	.has-result .team-row:not(.winner) .team-info {
+		opacity: 0.6;
 	}
 
 	.score {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fetchGames, formatDateForApi } from '$lib/api';
-	import type { Game } from '$lib/types';
+	import { fetchGames, fetchStandings, formatDateForApi } from '$lib/api';
+	import type { Game, StandingsMap } from '$lib/types';
 	import DayPicker from '$lib/components/DayPicker.svelte';
 	import GamesList from '$lib/components/GamesList.svelte';
 	import BoxScorePanel from '$lib/components/BoxScorePanel.svelte';
@@ -21,6 +21,7 @@
 	let currentTheme = $state(getStoredTheme());
 	let selectedDate = $state(new Date());
 	let games = $state<Game[]>([]);
+	let standings = $state<StandingsMap>({});
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let selectedGame = $state<Game | null>(null);
@@ -30,6 +31,7 @@
 	// Track pending request to cancel on new requests
 	let gamesAbortController: AbortController | null = null;
 	let gamesRefreshInterval: ReturnType<typeof setInterval> | null = null;
+	let standingsRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
 	// For testing: ?testTime=2026-01-31T08:00:00 to simulate different times
 	function getTestTime(): Date {
@@ -114,6 +116,13 @@
 	// Check if any games are currently live
 	function hasLiveGames(): boolean {
 		return games.some(game => game.period > 0 && game.time && game.status !== 'Final');
+	}
+
+	async function loadStandings() {
+		const result = await fetchStandings();
+		if (result.data) {
+			standings = result.data;
+		}
 	}
 
 	function handleDateChange(date: Date) {
@@ -267,6 +276,7 @@
 	// Initialize on mount
 	onMount(() => {
 		initializeDate();
+		loadStandings();
 	});
 
 	// Auto-refresh games list when there are live games
@@ -289,6 +299,27 @@
 			if (gamesRefreshInterval) {
 				clearInterval(gamesRefreshInterval);
 				gamesRefreshInterval = null;
+			}
+		};
+	});
+
+	// Auto-refresh standings when there are live games (every 2 minutes)
+	$effect(() => {
+		if (standingsRefreshInterval) {
+			clearInterval(standingsRefreshInterval);
+			standingsRefreshInterval = null;
+		}
+
+		if (hasLiveGames()) {
+			standingsRefreshInterval = setInterval(() => {
+				loadStandings();
+			}, 120000); // 2 minutes
+		}
+
+		return () => {
+			if (standingsRefreshInterval) {
+				clearInterval(standingsRefreshInterval);
+				standingsRefreshInterval = null;
 			}
 		};
 	});
@@ -381,6 +412,7 @@
 			</div>
 			<GamesList
 				{games}
+				{standings}
 				{loading}
 				{error}
 				{selectedGameId}

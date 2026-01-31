@@ -100,6 +100,36 @@ export interface TeamTotals {
 	pts: number;
 }
 
+// Standings types
+export interface TeamStanding {
+	team: Team;
+	conference: string;
+	conference_rank: number;
+	division: string;
+	division_rank: number;
+	wins: number;
+	losses: number;
+	home_wins: number;
+	home_losses: number;
+	road_wins: number;
+	road_losses: number;
+	last_ten_wins: number;
+	last_ten_losses: number;
+	season: number;
+}
+
+export interface StandingsResponse {
+	data: TeamStanding[];
+}
+
+// Map of team abbreviation to their record and conference rank
+export type StandingsMap = Record<string, {
+	wins: number;
+	losses: number;
+	conference: string;
+	conference_rank: number;
+}>;
+
 // API Response wrappers
 export interface GamesResponse {
 	data: Game[];

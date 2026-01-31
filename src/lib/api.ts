@@ -1,4 +1,4 @@
-import type { GamesResponse, BoxScore, ApiResult } from './types';
+import type { GamesResponse, BoxScore, StandingsMap, ApiResult } from './types';
 
 /**
  * Fetch games for a specific date
@@ -59,6 +59,44 @@ export async function fetchBoxScore(gameId: number, signal?: AbortSignal): Promi
 
 		const result: { data: BoxScore } = await response.json();
 		return { data: result.data, error: null };
+	} catch (err) {
+		// Don't treat aborted requests as errors
+		if (err instanceof Error && err.name === 'AbortError') {
+			return { data: null, error: null };
+		}
+		return {
+			data: null,
+			error: {
+				message: 'Network error. Please check your connection.',
+				status: 0
+			}
+		};
+	}
+}
+
+/**
+ * Fetch current season standings
+ * @param season - Optional season year (defaults to current)
+ * @param signal - Optional AbortSignal to cancel the request
+ */
+export async function fetchStandings(season?: number, signal?: AbortSignal): Promise<ApiResult<StandingsMap>> {
+	try {
+		const url = season ? `/api/standings?season=${season}` : '/api/standings';
+		const response = await fetch(url, { signal });
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({}));
+			return {
+				data: null,
+				error: {
+					message: errorData.message || 'Failed to fetch standings',
+					status: response.status
+				}
+			};
+		}
+
+		const data: StandingsMap = await response.json();
+		return { data, error: null };
 	} catch (err) {
 		// Don't treat aborted requests as errors
 		if (err instanceof Error && err.name === 'AbortError') {

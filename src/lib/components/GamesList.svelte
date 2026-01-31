@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { Game } from '$lib/types';
+	import type { Game, StandingsMap } from '$lib/types';
 	import GameCard from './GameCard.svelte';
 	import GameCardSkeleton from './GameCardSkeleton.svelte';
 	import BoxScorePanel from './BoxScorePanel.svelte';
 
 	interface Props {
 		games: Game[];
+		standings?: StandingsMap;
 		loading: boolean;
 		error: string | null;
 		selectedGameId?: number | null;
@@ -13,7 +14,7 @@
 		onRetry?: () => void;
 	}
 
-	let { games, loading, error, selectedGameId = null, onSelectGame, onRetry }: Props = $props();
+	let { games, standings = {}, loading, error, selectedGameId = null, onSelectGame, onRetry }: Props = $props();
 
 	function handleGameSelect(game: Game) {
 		if (onSelectGame) {
@@ -105,6 +106,7 @@
 			<div class="game-item" data-game-id={game.id}>
 				<GameCard
 					{game}
+					{standings}
 					selected={selectedGameId === game.id}
 					onSelect={handleGameSelect}
 				/>
