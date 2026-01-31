@@ -147,14 +147,31 @@ async function syncPlayerSeasonStats(apiKey: string, season: number): Promise<nu
 		100
 	);
 
+	// Get all player IDs from the stats
+	const playerIds = stats.map((s) => s.player.id);
+
+	// Look up current team_id for each player from our players table
+	const { data: playersData } = await supabase
+		.from('players')
+		.select('id, team_id')
+		.in('id', playerIds);
+
+	const playerTeamMap = new Map<number, number | null>();
+	for (const p of playersData || []) {
+		playerTeamMap.set(p.id, p.team_id);
+	}
+
+	// Filter to only players with a known team (team_id is required in PK)
+	const statsWithTeam = stats.filter((s) => playerTeamMap.get(s.player.id));
+
 	// Batch upsert in chunks
 	const chunkSize = 100;
-	for (let i = 0; i < stats.length; i += chunkSize) {
-		const chunk = stats.slice(i, i + chunkSize);
+	for (let i = 0; i < statsWithTeam.length; i += chunkSize) {
+		const chunk = statsWithTeam.slice(i, i + chunkSize);
 		const rows = chunk.map((s) => ({
 			player_id: s.player.id,
 			season: s.season,
-			team_id: s.player.team?.id || null,
+			team_id: playerTeamMap.get(s.player.id)!,
 			games_played: s.stats.gp || 0,
 			min: s.stats.min || null,
 			pts: s.stats.pts || null,
@@ -181,7 +198,7 @@ async function syncPlayerSeasonStats(apiKey: string, season: number): Promise<nu
 		await supabase.from('player_season_stats').upsert(rows, { onConflict: 'player_id,season,team_id' });
 	}
 
-	return stats.length;
+	return statsWithTeam.length;
 }
 
 // Sync team season stats

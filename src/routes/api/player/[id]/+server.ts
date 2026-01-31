@@ -22,22 +22,50 @@ function getPlayerSeasonRange(draftYear: number | null): number[] {
 	return seasons;
 }
 
-// Fetch all game stats for a player in a season to detect multi-team situations
-async function fetchGameStatsForSeason(
+// Fetch season averages from the API (uses season_type=regular for accurate counts)
+async function fetchSeasonAverages(
 	playerId: number,
 	season: number,
 	apiKey: string
-): Promise<any[]> {
-	const allStats: any[] = [];
+): Promise<any | null> {
+	try {
+		const url = `${API_BASE}/season_averages/general?season=${season}&season_type=regular&player_ids[]=${playerId}&type=base`;
+		const response = await fetch(url, { headers: { Authorization: apiKey } });
+
+		if (!response.ok) {
+			if (response.status === 429) {
+				await new Promise((resolve) => setTimeout(resolve, 2000));
+				const retry = await fetch(url, { headers: { Authorization: apiKey } });
+				if (!retry.ok) return null;
+				const data = await retry.json();
+				return data.data?.[0] || null;
+			}
+			return null;
+		}
+
+		const data = await response.json();
+		return data.data?.[0] || null;
+	} catch {
+		return null;
+	}
+}
+
+// Fetch all game stats for a player in a season, grouped by team
+async function fetchGameStatsByTeam(
+	playerId: number,
+	season: number,
+	apiKey: string
+): Promise<Map<number, { team: any; games: any[] }>> {
+	const teamMap = new Map<number, { team: any; games: any[] }>();
 	let cursor: string | null = null;
 	let pages = 0;
-	const maxPages = 10; // Safety limit
+	const maxPages = 10;
 
 	try {
 		while (pages < maxPages) {
 			const url = cursor
-				? `${API_BASE}/stats?seasons[]=${season}&player_ids[]=${playerId}&per_page=100&cursor=${cursor}`
-				: `${API_BASE}/stats?seasons[]=${season}&player_ids[]=${playerId}&per_page=100`;
+				? `${API_BASE}/stats?seasons[]=${season}&player_ids[]=${playerId}&per_page=100&postseason=false&cursor=${cursor}`
+				: `${API_BASE}/stats?seasons[]=${season}&player_ids[]=${playerId}&per_page=100&postseason=false`;
 
 			const response = await fetch(url, { headers: { Authorization: apiKey } });
 
@@ -50,7 +78,17 @@ async function fetchGameStatsForSeason(
 			}
 
 			const data = await response.json();
-			allStats.push(...(data.data || []));
+
+			for (const stat of data.data || []) {
+				if (stat.team?.id) {
+					const existing = teamMap.get(stat.team.id);
+					if (existing) {
+						existing.games.push(stat);
+					} else {
+						teamMap.set(stat.team.id, { team: stat.team, games: [stat] });
+					}
+				}
+			}
 
 			if (!data.meta?.next_cursor) break;
 			cursor = data.meta.next_cursor;
@@ -62,20 +100,12 @@ async function fetchGameStatsForSeason(
 		// Return what we have
 	}
 
-	return allStats;
+	return teamMap;
 }
 
-// Calculate per-team averages from game stats
-function calculatePerTeamAverages(
-	gameStats: any[],
-	season: number,
-	playerId: number
-): Array<{
-	player_id: number;
-	season: number;
-	team_id: number;
-	team: any;
-	games_played: number;
+// Calculate averages from a set of game stats
+function calculateAverages(games: any[]): {
+	gamesPlayed: number;
 	min: number | null;
 	pts: number | null;
 	reb: number | null;
@@ -94,94 +124,150 @@ function calculatePerTeamAverages(
 	ft_pct: number | null;
 	oreb: number | null;
 	dreb: number | null;
-}> {
-	// Group stats by team
-	const teamStats = new Map<
-		number,
-		{
-			team: any;
-			games: any[];
-		}
-	>();
+} {
+	// Filter out future/unplayed games (0 minutes = DNP or not yet played)
+	const playedGames = games.filter((g) => {
+		const min = typeof g.min === 'string' ? parseFloat(g.min.split(':')[0]) : g.min || 0;
+		return min > 0;
+	});
 
-	for (const game of gameStats) {
-		if (!game.team?.id) continue;
-
-		const teamId = game.team.id;
-		if (!teamStats.has(teamId)) {
-			teamStats.set(teamId, { team: game.team, games: [] });
-		}
-		teamStats.get(teamId)!.games.push(game);
+	if (playedGames.length === 0) {
+		return {
+			gamesPlayed: 0,
+			min: null, pts: null, reb: null, ast: null, stl: null, blk: null,
+			turnover: null, fgm: null, fga: null, fg_pct: null, fg3m: null,
+			fg3a: null, fg3_pct: null, ftm: null, fta: null, ft_pct: null,
+			oreb: null, dreb: null
+		};
 	}
 
-	// Calculate averages for each team
+	let totalMin = 0, totalPts = 0, totalReb = 0, totalAst = 0;
+	let totalStl = 0, totalBlk = 0, totalTov = 0;
+	let totalFgm = 0, totalFga = 0, totalFg3m = 0, totalFg3a = 0;
+	let totalFtm = 0, totalFta = 0, totalOreb = 0, totalDreb = 0;
+
+	for (const g of playedGames) {
+		const min = typeof g.min === 'string' ? parseFloat(g.min.split(':')[0]) : g.min || 0;
+		totalMin += min;
+		totalPts += g.pts || 0;
+		totalReb += g.reb || 0;
+		totalAst += g.ast || 0;
+		totalStl += g.stl || 0;
+		totalBlk += g.blk || 0;
+		totalTov += g.turnover || g.tov || 0;
+		totalFgm += g.fgm || 0;
+		totalFga += g.fga || 0;
+		totalFg3m += g.fg3m || 0;
+		totalFg3a += g.fg3a || 0;
+		totalFtm += g.ftm || 0;
+		totalFta += g.fta || 0;
+		totalOreb += g.oreb || 0;
+		totalDreb += g.dreb || 0;
+	}
+
+	const n = playedGames.length;
+	return {
+		gamesPlayed: n,
+		min: totalMin / n,
+		pts: totalPts / n,
+		reb: totalReb / n,
+		ast: totalAst / n,
+		stl: totalStl / n,
+		blk: totalBlk / n,
+		turnover: totalTov / n,
+		fgm: totalFgm / n,
+		fga: totalFga / n,
+		fg_pct: totalFga > 0 ? totalFgm / totalFga : null,
+		fg3m: totalFg3m / n,
+		fg3a: totalFg3a / n,
+		fg3_pct: totalFg3a > 0 ? totalFg3m / totalFg3a : null,
+		ftm: totalFtm / n,
+		fta: totalFta / n,
+		ft_pct: totalFta > 0 ? totalFtm / totalFta : null,
+		oreb: totalOreb / n,
+		dreb: totalDreb / n
+	};
+}
+
+// Fetch season stats for a player, with per-team breakdown for multi-team seasons
+async function fetchSeasonStats(
+	playerId: number,
+	season: number,
+	apiKey: string
+): Promise<any[]> {
+	// First, get overall season averages (uses season_type=regular for accurate game count)
+	const seasonAvg = await fetchSeasonAverages(playerId, season, apiKey);
+	if (!seasonAvg) return [];
+
+	// Fetch game stats grouped by team
+	const teamsMap = await fetchGameStatsByTeam(playerId, season, apiKey);
+
+	if (teamsMap.size <= 1) {
+		// Single team season - use the season average (most accurate)
+		const teamEntry = teamsMap.size === 1 ? Array.from(teamsMap.values())[0] : null;
+		return [
+			{
+				player_id: playerId,
+				season,
+				team_id: teamEntry?.team?.id || null,
+				team: teamEntry?.team || null,
+				games_played: seasonAvg.stats?.gp || seasonAvg.gp || 0,
+				min: seasonAvg.stats?.min || seasonAvg.min || null,
+				pts: seasonAvg.stats?.pts || seasonAvg.pts || null,
+				reb: seasonAvg.stats?.reb || seasonAvg.reb || null,
+				ast: seasonAvg.stats?.ast || seasonAvg.ast || null,
+				stl: seasonAvg.stats?.stl || seasonAvg.stl || null,
+				blk: seasonAvg.stats?.blk || seasonAvg.blk || null,
+				turnover: seasonAvg.stats?.tov || seasonAvg.stats?.turnover || seasonAvg.tov || seasonAvg.turnover || null,
+				fgm: seasonAvg.stats?.fgm || seasonAvg.fgm || null,
+				fga: seasonAvg.stats?.fga || seasonAvg.fga || null,
+				fg_pct: seasonAvg.stats?.fg_pct || seasonAvg.fg_pct || null,
+				fg3m: seasonAvg.stats?.fg3m || seasonAvg.fg3m || null,
+				fg3a: seasonAvg.stats?.fg3a || seasonAvg.fg3a || null,
+				fg3_pct: seasonAvg.stats?.fg3_pct || seasonAvg.fg3_pct || null,
+				ftm: seasonAvg.stats?.ftm || seasonAvg.ftm || null,
+				fta: seasonAvg.stats?.fta || seasonAvg.fta || null,
+				ft_pct: seasonAvg.stats?.ft_pct || seasonAvg.ft_pct || null,
+				oreb: seasonAvg.stats?.oreb || seasonAvg.oreb || null,
+				dreb: seasonAvg.stats?.dreb || seasonAvg.dreb || null
+			}
+		];
+	}
+
+	// Multi-team season - calculate per-team averages from game stats
 	const results: any[] = [];
 
-	for (const [teamId, { team, games }] of teamStats) {
-		const gamesPlayed = games.length;
-		if (gamesPlayed === 0) continue;
+	for (const [teamId, { team, games }] of teamsMap) {
+		// Calculate actual per-team averages (filters out unplayed/future games)
+		const avgs = calculateAverages(games);
 
-		// Sum up all stats
-		let totalMin = 0,
-			totalPts = 0,
-			totalReb = 0,
-			totalAst = 0;
-		let totalStl = 0,
-			totalBlk = 0,
-			totalTov = 0;
-		let totalFgm = 0,
-			totalFga = 0,
-			totalFg3m = 0,
-			totalFg3a = 0;
-		let totalFtm = 0,
-			totalFta = 0,
-			totalOreb = 0,
-			totalDreb = 0;
-
-		for (const g of games) {
-			// Parse minutes (format might be "32:45" or just a number)
-			const min = typeof g.min === 'string' ? parseFloat(g.min.split(':')[0]) : g.min || 0;
-			totalMin += min;
-			totalPts += g.pts || 0;
-			totalReb += g.reb || 0;
-			totalAst += g.ast || 0;
-			totalStl += g.stl || 0;
-			totalBlk += g.blk || 0;
-			totalTov += g.turnover || g.tov || 0;
-			totalFgm += g.fgm || 0;
-			totalFga += g.fga || 0;
-			totalFg3m += g.fg3m || 0;
-			totalFg3a += g.fg3a || 0;
-			totalFtm += g.ftm || 0;
-			totalFta += g.fta || 0;
-			totalOreb += g.oreb || 0;
-			totalDreb += g.dreb || 0;
-		}
+		// Skip if no games actually played with this team
+		if (avgs.gamesPlayed === 0) continue;
 
 		results.push({
 			player_id: playerId,
 			season,
 			team_id: teamId,
 			team,
-			games_played: gamesPlayed,
-			min: totalMin / gamesPlayed,
-			pts: totalPts / gamesPlayed,
-			reb: totalReb / gamesPlayed,
-			ast: totalAst / gamesPlayed,
-			stl: totalStl / gamesPlayed,
-			blk: totalBlk / gamesPlayed,
-			turnover: totalTov / gamesPlayed,
-			fgm: totalFgm / gamesPlayed,
-			fga: totalFga / gamesPlayed,
-			fg_pct: totalFga > 0 ? totalFgm / totalFga : null,
-			fg3m: totalFg3m / gamesPlayed,
-			fg3a: totalFg3a / gamesPlayed,
-			fg3_pct: totalFg3a > 0 ? totalFg3m / totalFg3a : null,
-			ftm: totalFtm / gamesPlayed,
-			fta: totalFta / gamesPlayed,
-			ft_pct: totalFta > 0 ? totalFtm / totalFta : null,
-			oreb: totalOreb / gamesPlayed,
-			dreb: totalDreb / gamesPlayed
+			games_played: avgs.gamesPlayed,
+			min: avgs.min,
+			pts: avgs.pts,
+			reb: avgs.reb,
+			ast: avgs.ast,
+			stl: avgs.stl,
+			blk: avgs.blk,
+			turnover: avgs.turnover,
+			fgm: avgs.fgm,
+			fga: avgs.fga,
+			fg_pct: avgs.fg_pct,
+			fg3m: avgs.fg3m,
+			fg3a: avgs.fg3a,
+			fg3_pct: avgs.fg3_pct,
+			ftm: avgs.ftm,
+			fta: avgs.fta,
+			ft_pct: avgs.ft_pct,
+			oreb: avgs.oreb,
+			dreb: avgs.dreb
 		});
 	}
 
@@ -344,23 +430,19 @@ export const GET: RequestHandler = async ({ params }) => {
 		if (missingSeasonsToFetch.length > 0) {
 			const newStats: any[] = [];
 
-			// Process in batches of 2 to avoid rate limits (game stats are heavier)
+			// Process in batches of 2 to avoid rate limits
 			for (let i = 0; i < missingSeasonsToFetch.length; i += 2) {
 				const batch = missingSeasonsToFetch.slice(i, i + 2);
 
 				const results = await Promise.all(
 					batch.map(async (season) => {
-						// Fetch all game stats for this season
-						const gameStats = await fetchGameStatsForSeason(playerId, season, apiKey);
+						// Fetch season stats (handles multi-team seasons)
+						const stats = await fetchSeasonStats(playerId, season, apiKey);
 
-						if (gameStats.length > 0) {
-							// Calculate per-team averages
-							const perTeamStats = calculatePerTeamAverages(gameStats, season, playerId);
-
-							// Cache all team stats
-							await cachePerTeamStats(perTeamStats);
-
-							return perTeamStats;
+						if (stats.length > 0) {
+							// Cache the stats
+							await cachePerTeamStats(stats);
+							return stats;
 						}
 						return [];
 					})
