@@ -4,7 +4,7 @@
 </script>
 
 <script lang="ts">
-	import { fetchBoxScore, fetchPlayerSeasonStats } from '$lib/api';
+	import { fetchBoxScore, fetchPlayerSeasonStats, fetchLineups } from '$lib/api';
 	import { getTeamColors } from '$lib/team-colors';
 	import type { BoxScore, Game, PlayerSeasonStats } from '$lib/types';
 	import StatsTable from './StatsTable.svelte';
@@ -21,6 +21,7 @@
 
 	let boxScore = $state<BoxScore | null>(null);
 	let seasonStats = $state<PlayerSeasonStats[]>([]);
+	let starters = $state<Set<number>>(new Set());
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
@@ -113,21 +114,30 @@
 			error = null;
 		}
 
-		const result = await fetchBoxScore(id, abortController.signal);
+		// Fetch box score and lineups in parallel
+		const [boxScoreResult, lineupsResult] = await Promise.all([
+			fetchBoxScore(id, abortController.signal),
+			fetchLineups(id, abortController.signal)
+		]);
 
 		// If request was aborted, don't update state
-		if (!result.data && !result.error) {
+		if (!boxScoreResult.data && !boxScoreResult.error) {
 			return;
 		}
 
-		if (result.error) {
+		if (boxScoreResult.error) {
 			// Only show error on initial load, ignore errors during silent refresh
 			if (!silent) {
-				error = result.error.message;
+				error = boxScoreResult.error.message;
 				boxScore = null;
 			}
 		} else {
-			boxScore = result.data;
+			boxScore = boxScoreResult.data;
+		}
+
+		// Update starters (don't fail if lineups aren't available yet)
+		if (lineupsResult.data?.starters) {
+			starters = new Set(lineupsResult.data.starters);
 		}
 
 		if (!silent) {
@@ -335,6 +345,7 @@
 					<StatsTable
 						players={combinedPlayers}
 						showTeamColumn={true}
+						{starters}
 					/>
 				</section>
 			{:else}
@@ -344,6 +355,7 @@
 						totals={boxScore.visitor_team.totals}
 						teamColor={visitorColors.primary}
 						teamAbbr={game.visitor_team.abbreviation}
+						{starters}
 					/>
 				</section>
 
@@ -353,6 +365,7 @@
 						totals={boxScore.home_team.totals}
 						teamColor={homeColors.primary}
 						teamAbbr={game.home_team.abbreviation}
+						{starters}
 					/>
 				</section>
 			{/if}

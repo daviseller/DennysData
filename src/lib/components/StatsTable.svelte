@@ -8,9 +8,10 @@
 		teamColor?: string;
 		teamAbbr?: string;
 		showTeamColumn?: boolean;
+		starters?: Set<number>;
 	}
 
-	let { players, totals, teamColor, teamAbbr, showTeamColumn = false }: Props = $props();
+	let { players, totals, teamColor, teamAbbr, showTeamColumn = false, starters = new Set() }: Props = $props();
 
 	type SortKey = 'name' | 'min' | 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'fg' | 'fg3' | 'ft';
 	type SortDir = 'asc' | 'desc';
@@ -252,6 +253,9 @@
 							<span class="player-name">
 								{player.player.first_name.charAt(0)}. {player.player.last_name}
 							</span>
+							{#if starters.has(player.player.id)}
+								<span class="starter-badge">S</span>
+							{/if}
 						</td>
 						<td class="col-stat">{formatMinutes(player.min)}</td>
 						<td class="col-stat" class:stat-leader={player.player.id === ptsLeader}>{player.pts}</td>
@@ -417,6 +421,18 @@
 	.player-name {
 		color: var(--text-primary);
 		font-weight: 500;
+	}
+
+	.starter-badge {
+		margin-left: var(--space-xs);
+		padding: 1px 4px;
+		font-size: 9px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		color: var(--text-muted);
+		background: var(--bg-inset);
+		border-radius: 2px;
+		vertical-align: middle;
 	}
 
 	.col-stat {

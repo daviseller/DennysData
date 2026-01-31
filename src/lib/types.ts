@@ -206,3 +206,16 @@ export interface PlayerSeasonStatsResponse {
 	data: PlayerSeasonStats[];
 	season: number;
 }
+
+// Lineups (starters) response
+export interface LineupPlayer {
+	player_id: number;
+	team_id: number;
+	starter: boolean;
+	position: string;
+}
+
+export interface LineupsResponse {
+	data: LineupPlayer[];
+	starters: number[]; // Player IDs of starters for easy lookup
+}
