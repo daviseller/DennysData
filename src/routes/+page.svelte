@@ -88,7 +88,7 @@
 				games = [];
 			}
 		} else {
-			// Sort games: Live first, then Upcoming (by time), then Finished
+			// Sort games: Live first (by period desc), then Upcoming (by time), then Finished
 			const rawGames = result.data?.data ?? [];
 			games = rawGames.sort((a, b) => {
 				const aIsLive = a.period > 0 && a.time && a.status !== 'Final';
@@ -104,13 +104,28 @@
 				if (aIsFinal && !bIsFinal) return 1;
 				if (!aIsFinal && bIsFinal) return -1;
 
-				// Within same category, sort by start time
+				// Within live games, sort by period desc, then time remaining asc
+				if (aIsLive && bIsLive) {
+					if (a.period !== b.period) {
+						return b.period - a.period;
+					}
+					// Parse time remaining (e.g., "5:30" or "Q1 5:30")
+					const parseTime = (t: string) => {
+						const match = t.match(/(\d+):(\d+)/);
+						if (!match) return 999;
+						return parseInt(match[1]) * 60 + parseInt(match[2]);
+					};
+					return parseTime(a.time) - parseTime(b.time);
+				}
+
+				// Within scheduled/finished games, sort by start time or ID
 				const timeA = new Date(a.status).getTime();
 				const timeB = new Date(b.status).getTime();
 				if (!isNaN(timeA) && !isNaN(timeB)) {
 					return timeA - timeB;
 				}
-				return 0;
+				// Fallback to ID order
+				return a.id - b.id;
 			});
 		}
 
