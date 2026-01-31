@@ -89,11 +89,23 @@
 		}
 	]);
 
-	function getBarWidth(value: number, otherValue: number): number {
-		const max = Math.max(value, otherValue);
+	// Fixed maximums for each stat type
+	const statMaximums: Record<string, number> = {
+		'PTS': 150,
+		'REB': 80,
+		'AST': 40,
+		'STL': 30,
+		'BLK': 30,
+		'TO': 45,
+		'FG%': 1,  // Percentages are 0-1
+		'3P%': 1,
+		'FT%': 1
+	};
+
+	function getBarWidth(value: number, label: string): number {
+		const max = statMaximums[label] ?? 100;
 		if (max === 0) return 0;
-		// Scale to percentage of the half (max gets 100% of its half)
-		return (value / max) * 100;
+		return Math.min((value / max) * 100, 100);
 	}
 
 	function getWinner(homeRaw: number, visitorRaw: number, label: string): 'home' | 'visitor' | 'tie' {
@@ -124,8 +136,8 @@
 
 	<div class="totals-body">
 		{#each stats as stat (stat.label)}
-			{@const visitorWidth = getBarWidth(stat.visitorRaw, stat.homeRaw)}
-			{@const homeWidth = getBarWidth(stat.homeRaw, stat.visitorRaw)}
+			{@const visitorWidth = getBarWidth(stat.visitorRaw, stat.label)}
+			{@const homeWidth = getBarWidth(stat.homeRaw, stat.label)}
 			{@const winner = getWinner(stat.homeRaw, stat.visitorRaw, stat.label)}
 			<div class="stat-row">
 				<div class="stat-value visitor" class:winner={winner === 'visitor'}>
