@@ -4,20 +4,23 @@
 </script>
 
 <script lang="ts">
-	import { fetchBoxScore } from '$lib/api';
+	import { fetchBoxScore, fetchPlayerSeasonStats } from '$lib/api';
 	import { getTeamColors } from '$lib/team-colors';
-	import type { BoxScore, Game } from '$lib/types';
+	import type { BoxScore, Game, PlayerSeasonStats } from '$lib/types';
 	import StatsTable from './StatsTable.svelte';
+	import SeasonStatsTable from './SeasonStatsTable.svelte';
 	import TeamTotals from './TeamTotals.svelte';
 	import BoxScoreSkeleton from './BoxScoreSkeleton.svelte';
 
 	interface Props {
 		gameId: number;
+		game?: Game; // Pass game data to know if it's scheduled
 	}
 
-	let { gameId }: Props = $props();
+	let { gameId, game: initialGame }: Props = $props();
 
 	let boxScore = $state<BoxScore | null>(null);
+	let seasonStats = $state<PlayerSeasonStats[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
@@ -43,10 +46,17 @@
 	const game = $derived(boxScore?.game);
 	const status = $derived(game ? getGameStatus(game) : 'scheduled');
 
+	// Determine if we should fetch season stats (for scheduled games)
+	const isScheduledGame = $derived(initialGame ? getGameStatus(initialGame) === 'scheduled' : false);
+
 	// Load box score when gameId changes
 	$effect(() => {
 		if (gameId) {
-			loadBoxScore(gameId);
+			if (isScheduledGame && initialGame) {
+				loadSeasonStats(initialGame);
+			} else {
+				loadBoxScore(gameId);
+			}
 		}
 	});
 
@@ -73,6 +83,22 @@
 			}
 		};
 	});
+
+	async function loadSeasonStats(g: Game) {
+		loading = true;
+		error = null;
+		seasonStats = [];
+
+		const result = await fetchPlayerSeasonStats([g.visitor_team.id, g.home_team.id]);
+
+		if (result.error) {
+			error = result.error.message;
+		} else if (result.data) {
+			seasonStats = result.data.data;
+		}
+
+		loading = false;
+	}
 
 	async function loadBoxScore(id: number, silent = false) {
 		// Cancel any pending request
@@ -199,6 +225,64 @@
 				RETRY
 			</button>
 		</div>
+	{:else if isScheduledGame && initialGame && seasonStats.length > 0}
+		{@const schedGame = initialGame}
+		{@const schedVisitorColors = getTeamColors(schedGame.visitor_team.abbreviation)}
+		{@const schedHomeColors = getTeamColors(schedGame.home_team.abbreviation)}
+		{@const schedGameDate = (() => {
+			const [year, month, day] = schedGame.date.split('-').map(Number);
+			const date = new Date(year, month - 1, day);
+			return date.toLocaleDateString('en-US', {
+				weekday: 'short',
+				month: 'short',
+				day: 'numeric'
+			}).toUpperCase();
+		})()}
+		{@const schedStatusText = formatGameTime(schedGame.status)}
+
+		<div class="game-header">
+			<div class="game-matchup">
+				<div class="team visitor">
+					<span class="team-color" style="background: linear-gradient(135deg, {schedVisitorColors.primary} 49%, {schedVisitorColors.secondary} 51%)"></span>
+					<span class="team-abbr">{schedGame.visitor_team.abbreviation}</span>
+					<span class="team-score">-</span>
+				</div>
+
+				<div class="game-status">
+					<span class="game-date">{schedGameDate}</span>
+					<span class="status-indicator status-scheduled">
+						<span class="status-dot"></span>
+						{schedStatusText}
+					</span>
+				</div>
+
+				<div class="team home">
+					<span class="team-score">-</span>
+					<span class="team-abbr">{schedGame.home_team.abbreviation}</span>
+					<span class="team-color" style="background: linear-gradient(135deg, {schedHomeColors.primary} 49%, {schedHomeColors.secondary} 51%)"></span>
+				</div>
+			</div>
+		</div>
+
+		<div class="preview-label">
+			<span class="preview-text">GAME PREVIEW</span>
+		</div>
+
+		<section class="stats-section">
+			<SeasonStatsTable
+				players={seasonStats}
+				teamAbbr={schedGame.visitor_team.abbreviation}
+				teamId={schedGame.visitor_team.id}
+			/>
+		</section>
+
+		<section class="stats-section">
+			<SeasonStatsTable
+				players={seasonStats}
+				teamAbbr={schedGame.home_team.abbreviation}
+				teamId={schedGame.home_team.id}
+			/>
+		</section>
 	{:else if boxScore && game}
 		<div class="game-header">
 			<div class="game-matchup">
@@ -503,6 +587,26 @@
 	@keyframes pulse {
 		0%, 100% { opacity: 1; }
 		50% { opacity: 0.4; }
+	}
+
+	/* Preview Label */
+	.preview-label {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: var(--space-md);
+	}
+
+	.preview-text {
+		font-family: var(--font-stats);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.1em;
+		color: var(--text-muted);
+		padding: var(--space-xs) var(--space-md);
+		background: var(--bg-inset);
+		border: 1px solid var(--border-secondary);
+		border-radius: var(--radius-sm);
 	}
 
 	/* Sections */

@@ -442,7 +442,7 @@
 					</button>
 				</div>
 				<div class="sidebar-content">
-					<BoxScorePanel gameId={selectedGameId} />
+					<BoxScorePanel gameId={selectedGameId} game={selectedGame} />
 				</div>
 			</aside>
 		{/if}

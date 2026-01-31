@@ -113,7 +113,7 @@
 				/>
 				{#if showInlineBoxScore && selectedGameId === game.id}
 					<div class="inline-boxscore">
-						<BoxScorePanel gameId={game.id} />
+						<BoxScorePanel gameId={game.id} game={game} />
 					</div>
 				{/if}
 			</div>

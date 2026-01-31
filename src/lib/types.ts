@@ -153,3 +153,40 @@ export interface ApiError {
 }
 
 export type ApiResult<T> = { data: T; error: null } | { data: null; error: ApiError };
+
+// Player season stats (from our database)
+export interface PlayerSeasonStats {
+	player: {
+		id: number;
+		first_name: string;
+		last_name: string;
+		team_id: number;
+		position: string | null;
+		jersey_number: string | null;
+	};
+	season: number;
+	games_played: number;
+	min: number | null;
+	pts: number | null;
+	reb: number | null;
+	ast: number | null;
+	stl: number | null;
+	blk: number | null;
+	turnover: number | null;
+	fgm: number | null;
+	fga: number | null;
+	fg_pct: number | null;
+	fg3m: number | null;
+	fg3a: number | null;
+	fg3_pct: number | null;
+	ftm: number | null;
+	fta: number | null;
+	ft_pct: number | null;
+	oreb: number | null;
+	dreb: number | null;
+}
+
+export interface PlayerSeasonStatsResponse {
+	data: PlayerSeasonStats[];
+	season: number;
+}
