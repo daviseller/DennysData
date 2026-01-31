@@ -2,9 +2,92 @@ import { json, error } from '@sveltejs/kit';
 import { BALLDONTLIE_API_KEY } from '$env/static/private';
 import { supabase } from '$lib/supabase';
 import type { RequestHandler } from './$types';
-import type { StatsResponse, Game, PlayerStats, BoxScore, TeamTotals } from '$lib/types';
+import type { StatsResponse, Game, PlayerStats, BoxScore, TeamTotals, Broadcast } from '$lib/types';
 
 const API_BASE = 'https://api.balldontlie.io/v1';
+const ESPN_API = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+
+// ESPN team abbreviation mapping (ESPN uses different abbrs for some teams)
+const ESPN_ABBR_MAP: Record<string, string> = {
+	'GS': 'GSW',
+	'NY': 'NYK',
+	'NO': 'NOP',
+	'SA': 'SAS',
+	'UTAH': 'UTA',
+	'WSH': 'WAS'
+};
+
+function normalizeAbbr(abbr: string): string {
+	return ESPN_ABBR_MAP[abbr] || abbr;
+}
+
+interface ESPNBroadcast {
+	market: 'national' | 'home' | 'away';
+	names: string[];
+}
+
+interface ESPNGame {
+	competitions: Array<{
+		competitors: Array<{
+			team: { abbreviation: string };
+			homeAway: 'home' | 'away';
+		}>;
+		broadcasts?: ESPNBroadcast[];
+	}>;
+}
+
+interface ESPNResponse {
+	events: ESPNGame[];
+}
+
+async function fetchBroadcastsForGame(
+	homeAbbr: string,
+	visitorAbbr: string,
+	gameDate: string,
+	fetchFn: typeof fetch
+): Promise<Broadcast[]> {
+	try {
+		// ESPN uses YYYYMMDD format
+		const espnDate = gameDate.replace(/-/g, '');
+		const response = await fetchFn(`${ESPN_API}?dates=${espnDate}`);
+
+		if (!response.ok) {
+			return [];
+		}
+
+		const data: ESPNResponse = await response.json();
+
+		for (const event of data.events) {
+			const competition = event.competitions[0];
+			if (!competition) continue;
+
+			const home = competition.competitors.find((c) => c.homeAway === 'home');
+			const away = competition.competitors.find((c) => c.homeAway === 'away');
+			if (!home || !away) continue;
+
+			const espnHome = normalizeAbbr(home.team.abbreviation);
+			const espnAway = normalizeAbbr(away.team.abbreviation);
+
+			// Match by team abbreviations
+			if (espnHome === homeAbbr && espnAway === visitorAbbr) {
+				const broadcasts: Broadcast[] = [];
+				for (const b of competition.broadcasts || []) {
+					for (const name of b.names) {
+						broadcasts.push({
+							network: name,
+							market: b.market
+						});
+					}
+				}
+				return broadcasts;
+			}
+		}
+	} catch (err) {
+		console.warn('Failed to fetch ESPN broadcasts:', err);
+	}
+
+	return [];
+}
 const CACHE_TTL_RECENT = 5 * 60 * 1000; // 5 minutes for recent games
 
 function isGameFinal(game: Game): boolean {
@@ -47,6 +130,18 @@ export const GET: RequestHandler = async ({ params, fetch }) => {
 		if (cached) {
 			const boxScore = cached.data as { data: BoxScore };
 			if (isCacheValid(cached.cached_at, boxScore.data.game)) {
+				// For non-final games, fetch fresh broadcast info
+				if (!isGameFinal(boxScore.data.game)) {
+					const broadcasts = await fetchBroadcastsForGame(
+						boxScore.data.game.home_team.abbreviation,
+						boxScore.data.game.visitor_team.abbreviation,
+						boxScore.data.game.date,
+						fetch
+					);
+					if (broadcasts.length > 0) {
+						boxScore.data.game.broadcasts = broadcasts;
+					}
+				}
 				return json(boxScore);
 			}
 		}
@@ -78,6 +173,19 @@ export const GET: RequestHandler = async ({ params, fetch }) => {
 
 		const game = gameData.data;
 		const stats = statsData.data;
+
+		// Fetch broadcast info for non-final games
+		if (!isGameFinal(game)) {
+			const broadcasts = await fetchBroadcastsForGame(
+				game.home_team.abbreviation,
+				game.visitor_team.abbreviation,
+				game.date,
+				fetch
+			);
+			if (broadcasts.length > 0) {
+				game.broadcasts = broadcasts;
+			}
+		}
 
 		// Separate stats by team
 		const homeStats = stats.filter((s) => s.team.id === game.home_team.id);

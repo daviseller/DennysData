@@ -259,7 +259,16 @@
 				</div>
 
 				<div class="game-status">
-					<span class="game-date">{schedGameDate}</span>
+					<span class="status-row">
+						<span class="game-date">{schedGameDate}</span>
+						{#if schedGame.broadcasts && schedGame.broadcasts.length > 0}
+							{@const national = schedGame.broadcasts.find(b => b.market === 'national')}
+							<span class="status-separator">·</span>
+							<span class="broadcast" class:national={!!national}>
+								{national ? national.network : 'League Pass'}
+							</span>
+						{/if}
+					</span>
 					<span class="status-indicator status-scheduled">
 						<span class="status-dot"></span>
 						{schedStatusText}
@@ -305,7 +314,16 @@
 				</div>
 
 				<div class="game-status">
-					<span class="game-date">{gameDate}</span>
+					<span class="status-row">
+						<span class="game-date">{gameDate}</span>
+						{#if game.broadcasts && game.broadcasts.length > 0 && status !== 'final'}
+							{@const national = game.broadcasts.find(b => b.market === 'national')}
+							<span class="status-separator">·</span>
+							<span class="broadcast" class:national={!!national}>
+								{national ? national.network : 'League Pass'}
+							</span>
+						{/if}
+					</span>
 					<span class="status-indicator status-{status}">
 						<span class="status-dot"></span>
 						{statusText}
@@ -554,6 +572,17 @@
 		gap: 2px;
 	}
 
+	.status-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.status-separator {
+		color: var(--text-muted);
+		opacity: 0.5;
+	}
+
 	.game-date {
 		font-family: var(--font-stats);
 		font-size: 10px;
@@ -595,6 +624,19 @@
 
 	.status-scheduled {
 		color: var(--status-scheduled);
+	}
+
+	.broadcast {
+		font-family: var(--font-stats);
+		font-size: 10px;
+		font-weight: 400;
+		letter-spacing: 0.02em;
+		color: var(--text-muted);
+	}
+
+	.broadcast.national {
+		font-weight: 600;
+		color: var(--text-secondary);
 	}
 
 	@keyframes pulse {
