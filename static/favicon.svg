@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#fff"/>
+
+  <!-- D stem -->
+  <rect x="8" y="7" width="4" height="18" fill="#000"/>
+
+  <!-- Basketball half-circle (the curve of D) -->
+  <path d="M12 7 A9 9 0 0 1 12 25" fill="none" stroke="#000" stroke-width="4"/>
+
+  <!-- Basketball seam lines -->
+  <path d="M12 16 L21 16" stroke="#000" stroke-width="1.5"/>
+  <path d="M15 10 Q17 16 15 22" fill="none" stroke="#000" stroke-width="1.5"/>
+</svg>
