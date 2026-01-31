@@ -122,7 +122,12 @@
 	}
 
 	function handleSelectGame(game: Game) {
-		selectedGame = game;
+		// Toggle off if clicking the already selected game
+		if (selectedGame?.id === game.id) {
+			selectedGame = null;
+		} else {
+			selectedGame = game;
+		}
 	}
 
 	function handleCloseBoxScore() {
@@ -307,69 +312,69 @@
 	const selectedGameId = $derived(selectedGame?.id ?? null);
 </script>
 
-<div class="container" class:has-panel={showBoxScore}>
-	<main class="main-content">
-		<header class="header">
-			<span class="header-title">DennysData</span>
-			<span class="header-divider">·</span>
-			<span class="header-subtitle">NBA</span>
-			<span class="header-divider">·</span>
-			<span class="header-subtitle">Box Scores</span>
-			<div class="header-spacer"></div>
-			<div class="theme-dropdown">
-				<button class="theme-trigger" onclick={toggleThemeDropdown}>
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<circle cx="12" cy="12" r="5"/>
-						<line x1="12" y1="1" x2="12" y2="3"/>
-						<line x1="12" y1="21" x2="12" y2="23"/>
-						<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-						<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-						<line x1="1" y1="12" x2="3" y2="12"/>
-						<line x1="21" y1="12" x2="23" y2="12"/>
-						<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-						<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-					</svg>
-					<span class="theme-current">{currentThemeInfo?.name}</span>
-					<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<path d="M6 9l6 6 6-6"/>
-					</svg>
-				</button>
-				{#if themeDropdownOpen}
-					<div class="theme-menu">
-						<div class="theme-group">
-							<span class="theme-group-label">LIGHT</span>
-							{#each themes.filter(t => t.type === 'light') as theme (theme.id)}
-								<button
-									class="theme-option"
-									class:active={currentTheme === theme.id}
-									onclick={() => setTheme(theme.id)}
-								>
-									{theme.name}
-								</button>
-							{/each}
-						</div>
-						<div class="theme-group">
-							<span class="theme-group-label">DARK</span>
-							{#each themes.filter(t => t.type === 'dark') as theme (theme.id)}
-								<button
-									class="theme-option"
-									class:active={currentTheme === theme.id}
-									onclick={() => setTheme(theme.id)}
-								>
-									{theme.name}
-								</button>
-							{/each}
-						</div>
+<div class="page-wrapper">
+	<header class="header">
+		<span class="header-title">DennysData</span>
+		<span class="header-divider">·</span>
+		<span class="header-subtitle">NBA</span>
+		<span class="header-divider">·</span>
+		<span class="header-subtitle">Box Scores</span>
+		<div class="header-spacer"></div>
+		<div class="theme-dropdown">
+			<button class="theme-trigger" onclick={toggleThemeDropdown}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="12" cy="12" r="5"/>
+					<line x1="12" y1="1" x2="12" y2="3"/>
+					<line x1="12" y1="21" x2="12" y2="23"/>
+					<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+					<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+					<line x1="1" y1="12" x2="3" y2="12"/>
+					<line x1="21" y1="12" x2="23" y2="12"/>
+					<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+					<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+				</svg>
+				<span class="theme-current">{currentThemeInfo?.name}</span>
+				<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M6 9l6 6 6-6"/>
+				</svg>
+			</button>
+			{#if themeDropdownOpen}
+				<div class="theme-menu">
+					<div class="theme-group">
+						<span class="theme-group-label">LIGHT</span>
+						{#each themes.filter(t => t.type === 'light') as theme (theme.id)}
+							<button
+								class="theme-option"
+								class:active={currentTheme === theme.id}
+								onclick={() => setTheme(theme.id)}
+							>
+								{theme.name}
+							</button>
+						{/each}
 					</div>
-				{/if}
-			</div>
-		</header>
+					<div class="theme-group">
+						<span class="theme-group-label">DARK</span>
+						{#each themes.filter(t => t.type === 'dark') as theme (theme.id)}
+							<button
+								class="theme-option"
+								class:active={currentTheme === theme.id}
+								onclick={() => setTheme(theme.id)}
+							>
+								{theme.name}
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
+	</header>
 
-		<section class="day-picker-section">
-			<DayPicker {selectedDate} onDateChange={handleDateChange} />
-		</section>
+	<section class="day-picker-section">
+		<DayPicker {selectedDate} onDateChange={handleDateChange} />
+	</section>
 
-		<section class="games-section mt-lg">
+	<div class="content-area" class:has-panel={showBoxScore}>
+		<section class="games-section">
 			<div class="section-header">
 				<span class="label">GAMES</span>
 				<span class="game-count">{games.length} {games.length === 1 ? 'game' : 'games'}</span>
@@ -383,47 +388,65 @@
 				onRetry={() => loadGames(selectedDate)}
 			/>
 		</section>
-	</main>
 
-	{#if showBoxScore}
-		<aside class="box-score-sidebar">
-			<div class="sidebar-header">
-				<span class="label">BOX SCORE</span>
-				<button class="close-btn" onclick={handleCloseBoxScore} aria-label="Close box score">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<path d="M18 6L6 18M6 6l12 12"/>
-					</svg>
-				</button>
-			</div>
-			<div class="sidebar-content">
-				<BoxScorePanel gameId={selectedGameId} />
-			</div>
-		</aside>
-	{/if}
+		{#if showBoxScore}
+			<aside class="box-score-sidebar">
+				<div class="sidebar-header">
+					<span class="label">BOX SCORE</span>
+					<button class="close-btn" onclick={handleCloseBoxScore} aria-label="Close box score">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M18 6L6 18M6 6l12 12"/>
+						</svg>
+					</button>
+				</div>
+				<div class="sidebar-content">
+					<BoxScorePanel gameId={selectedGameId} />
+				</div>
+			</aside>
+		{/if}
+	</div>
 </div>
 
 <style>
-	.container {
-		max-width: 960px;
-		margin: 0 auto;
+	.page-wrapper {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
 		padding: var(--space-lg);
-		transition: max-width var(--transition-base);
-		overflow-x: hidden;
+		overflow: hidden;
 	}
 
-	.container.has-panel {
+	.content-area {
+		flex: 1;
+		min-height: 0;
+		max-width: 960px;
+		width: 100%;
+		margin: 0 auto;
+		margin-top: var(--space-lg);
+		overflow-y: auto;
+	}
+
+	.content-area.has-panel {
 		display: grid;
 		grid-template-columns: minmax(300px, 400px) minmax(400px, 1fr);
 		gap: var(--space-lg);
 		max-width: 1400px;
 	}
 
+	.games-section {
+		min-width: 0;
+		min-height: 0;
+	}
+
+	.content-area.has-panel .games-section {
+		overflow-y: auto;
+		padding-right: var(--space-xs);
+	}
+
 	.box-score-sidebar {
-		position: sticky;
-		top: var(--space-lg);
-		max-height: calc(100vh - var(--space-lg) * 2);
 		display: flex;
 		flex-direction: column;
+		min-height: 0;
 		background: var(--bg-app);
 		overflow-y: auto;
 	}
@@ -461,17 +484,6 @@
 		flex: 1;
 	}
 
-	.main-content {
-		min-width: 0;
-	}
-
-	/* When panel is open, make games list scrollable */
-	.container.has-panel .games-section {
-		max-height: calc(100vh - 200px);
-		overflow-y: auto;
-		padding-right: var(--space-xs);
-	}
-
 	.day-picker-section {
 		display: flex;
 		justify-content: center;
@@ -491,7 +503,7 @@
 	}
 
 	@media (max-width: 900px) {
-		.container.has-panel {
+		.content-area.has-panel {
 			display: block;
 		}
 
@@ -502,7 +514,7 @@
 	}
 
 	@media (max-width: 640px) {
-		.container {
+		.page-wrapper {
 			padding: var(--space-md);
 		}
 	}
