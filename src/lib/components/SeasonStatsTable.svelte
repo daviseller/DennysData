@@ -95,25 +95,23 @@
 	}
 
 	function formatInjuryTooltip(injury: NonNullable<typeof players[0]['injury']>): string {
-		const parts: string[] = [];
+		const lines: string[] = [];
 
+		// Status on top
+		lines.push(injury.status.toUpperCase());
+
+		// Description in the middle
 		if (injury.description) {
-			parts.push(injury.description);
-		} else {
-			parts.push(injury.status);
+			lines.push(injury.description);
 		}
 
+		// Return date at the bottom
 		if (injury.return_date) {
 			const returnDate = new Date(injury.return_date);
-			parts.push(`Expected return: ${returnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
+			lines.push(`Expected return: ${returnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
 		}
 
-		if (injury.updated_at) {
-			const updateDate = new Date(injury.updated_at);
-			parts.push(`Updated: ${updateDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${updateDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`);
-		}
-
-		return parts.join(' \u2022 ');
+		return lines.join('\n\n');
 	}
 </script>
 

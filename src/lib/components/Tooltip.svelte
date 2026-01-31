@@ -115,11 +115,9 @@
 	@keyframes tooltip-fade-in {
 		from {
 			opacity: 0;
-			transform: scale(0.95);
 		}
 		to {
 			opacity: 1;
-			transform: scale(1);
 		}
 	}
 
@@ -131,10 +129,10 @@
 		padding: var(--space-sm) var(--space-md);
 		font-family: var(--font-display);
 		font-size: 12px;
-		line-height: 1.4;
+		line-height: 1.5;
 		max-width: 280px;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		white-space: normal;
+		white-space: pre-line;
 		word-wrap: break-word;
 	}
 
