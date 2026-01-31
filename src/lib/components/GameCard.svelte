@@ -73,7 +73,7 @@
 		</span>
 	</div>
 
-	<div class="game-teams" class:has-result={status !== 'scheduled'}>
+	<div class="game-teams" class:has-result={status === 'final'}>
 		<div class="team-row" class:winner={winner === 'visitor'}>
 			<span class="team-color" style="background: {visitorColors.primary}"></span>
 			<span class="team-abbr">{game.visitor_team.abbreviation}</span>

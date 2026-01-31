@@ -315,9 +315,6 @@
 	}
 
 	.box-score-sidebar {
-		position: sticky;
-		top: var(--space-lg);
-		max-height: calc(100vh - var(--space-lg) * 2);
 		display: flex;
 		flex-direction: column;
 		background: var(--bg-app);
@@ -354,12 +351,19 @@
 
 	.sidebar-content {
 		flex: 1;
-		overflow-y: auto;
-		padding-right: var(--space-xs);
 	}
 
 	.main-content {
 		min-width: 0;
+	}
+
+	/* When panel is open, make games list scrollable and sticky */
+	.container.has-panel .main-content {
+		position: sticky;
+		top: var(--space-lg);
+		max-height: calc(100vh - var(--space-lg) * 2);
+		overflow-y: auto;
+		padding-right: var(--space-xs);
 	}
 
 	.day-picker-section {
