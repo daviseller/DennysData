@@ -27,6 +27,7 @@
 	let selectedGame = $state<Game | null>(null);
 	let themeDropdownOpen = $state(false);
 	let initialDateResolved = $state(false);
+	let isMobile = $state(false);
 
 	// Track pending request to cancel on new requests
 	let gamesAbortController: AbortController | null = null;
@@ -273,10 +274,18 @@
 		});
 	}
 
+	// Track screen size for responsive behavior
+	function updateIsMobile() {
+		isMobile = window.innerWidth <= 900;
+	}
+
 	// Initialize on mount
 	onMount(() => {
 		initializeDate();
 		loadStandings();
+		updateIsMobile();
+		window.addEventListener('resize', updateIsMobile);
+		return () => window.removeEventListener('resize', updateIsMobile);
 	});
 
 	// Auto-refresh games list when there are live games
@@ -416,12 +425,13 @@
 				{loading}
 				{error}
 				{selectedGameId}
+				showInlineBoxScore={isMobile}
 				onSelectGame={handleSelectGame}
 				onRetry={() => loadGames(selectedDate)}
 			/>
 		</section>
 
-		{#if showBoxScore}
+		{#if showBoxScore && !isMobile}
 			<aside class="box-score-sidebar">
 				<div class="sidebar-header">
 					<span class="label">BOX SCORE</span>

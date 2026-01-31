@@ -189,6 +189,11 @@
 		color: var(--status-scheduled);
 	}
 
+	.status-scheduled .status-dot {
+		background: transparent;
+		border: 1.5px solid currentColor;
+	}
+
 	@keyframes pulse {
 		0%, 100% { opacity: 1; }
 		50% { opacity: 0.4; }
