@@ -5,23 +5,36 @@ import type { RequestHandler } from './$types';
 import type { GamesResponse, Game } from '$lib/types';
 
 const API_BASE = 'https://api.balldontlie.io/v1';
-const CACHE_TTL_RECENT = 5 * 60 * 1000; // 5 minutes for recent games
+
+function isToday(date: string): boolean {
+	const gameDate = new Date(date + 'T12:00:00'); // noon to avoid timezone issues
+	const today = new Date();
+	return (
+		gameDate.getFullYear() === today.getFullYear() &&
+		gameDate.getMonth() === today.getMonth() &&
+		gameDate.getDate() === today.getDate()
+	);
+}
 
 function isHistorical(date: string): boolean {
-	const gameDate = new Date(date);
+	const gameDate = new Date(date + 'T12:00:00');
 	const now = new Date();
 	const diff = now.getTime() - gameDate.getTime();
 	return diff > 24 * 60 * 60 * 1000; // More than 24 hours ago
 }
 
 function isCacheValid(cachedAt: string, date: string): boolean {
+	// Never use cache for today's games - they might be live
+	if (isToday(date)) {
+		return false;
+	}
 	// Historical games are always valid
 	if (isHistorical(date)) {
 		return true;
 	}
-	// Recent games valid for 5 minutes
+	// Future/recent games valid for 30 minutes
 	const cacheTime = new Date(cachedAt).getTime();
-	return Date.now() - cacheTime < CACHE_TTL_RECENT;
+	return Date.now() - cacheTime < 30 * 60 * 1000;
 }
 
 export const GET: RequestHandler = async ({ url, fetch }) => {
@@ -77,13 +90,14 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
 
 		const data: GamesResponse = await response.json();
 
-		// Check if any games are live (don't cache if so)
+		// Don't cache today's games (might be live) or if any are currently live
 		const hasLiveGames = data.data.some(
 			(game: Game) => game.status !== 'Final' && game.period > 0
 		);
+		const shouldCache = !isToday(date) && !hasLiveGames;
 
 		// Cache the response (upsert by date)
-		if (!hasLiveGames) {
+		if (shouldCache) {
 			// Create a unique ID from the date (YYYYMMDD as integer)
 			const dateId = parseInt(date.replace(/-/g, ''), 10);
 

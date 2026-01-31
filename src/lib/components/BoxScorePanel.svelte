@@ -18,22 +18,63 @@
 
 	// Track pending request to cancel on new requests
 	let abortController: AbortController | null = null;
+	let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
+	type GameStatus = 'live' | 'final' | 'scheduled';
+
+	function getGameStatus(game: Game): GameStatus {
+		if (game.status === 'Final') return 'final';
+		if (game.period > 0 && game.time) return 'live';
+		return 'scheduled';
+	}
+
+	// Derived values needed for auto-refresh
+	const game = $derived(boxScore?.game);
+	const status = $derived(game ? getGameStatus(game) : 'scheduled');
+
+	// Load box score when gameId changes
 	$effect(() => {
 		if (gameId) {
 			loadBoxScore(gameId);
 		}
 	});
 
-	async function loadBoxScore(id: number) {
+	// Auto-refresh for live games
+	$effect(() => {
+		// Clear any existing interval
+		if (refreshInterval) {
+			clearInterval(refreshInterval);
+			refreshInterval = null;
+		}
+
+		// If game is live, refresh every 30 seconds
+		if (status === 'live' && gameId) {
+			refreshInterval = setInterval(() => {
+				loadBoxScore(gameId, true); // silent refresh (no loading state)
+			}, 30000);
+		}
+
+		// Cleanup on unmount
+		return () => {
+			if (refreshInterval) {
+				clearInterval(refreshInterval);
+				refreshInterval = null;
+			}
+		};
+	});
+
+	async function loadBoxScore(id: number, silent = false) {
 		// Cancel any pending request
 		if (abortController) {
 			abortController.abort();
 		}
 		abortController = new AbortController();
 
-		loading = true;
-		error = null;
+		// Only show loading state on initial load, not during silent refresh
+		if (!silent) {
+			loading = true;
+			error = null;
+		}
 
 		const result = await fetchBoxScore(id, abortController.signal);
 
@@ -43,13 +84,18 @@
 		}
 
 		if (result.error) {
-			error = result.error.message;
-			boxScore = null;
+			// Only show error on initial load, ignore errors during silent refresh
+			if (!silent) {
+				error = result.error.message;
+				boxScore = null;
+			}
 		} else {
 			boxScore = result.data;
 		}
 
-		loading = false;
+		if (!silent) {
+			loading = false;
+		}
 	}
 
 	function getErrorInfo(error: string): { title: string; description: string } {
@@ -83,22 +129,18 @@
 		};
 	}
 
-	type GameStatus = 'live' | 'final' | 'scheduled';
-
-	function getGameStatus(game: Game): GameStatus {
-		if (game.status === 'Final') return 'final';
-		if (game.period > 0 && game.time) return 'live';
-		return 'scheduled';
-	}
-
-	function getStatusText(game: Game): string {
-		const status = getGameStatus(game);
-		if (status === 'final') return 'FINAL';
-		if (status === 'live') {
-			const quarter = game.period <= 4 ? `Q${game.period}` : `OT${game.period - 4}`;
-			return `${quarter} ${game.time}`;
+	function getStatusText(g: Game): string {
+		const s = getGameStatus(g);
+		if (s === 'final') return 'FINAL';
+		if (s === 'live') {
+			// game.time might already include quarter info, check before adding
+			if (g.time.startsWith('Q') || g.time.startsWith('OT')) {
+				return g.time;
+			}
+			const quarter = g.period <= 4 ? `Q${g.period}` : `OT${g.period - 4}`;
+			return `${quarter} ${g.time}`;
 		}
-		return formatGameTime(game.status);
+		return formatGameTime(g.status);
 	}
 
 	function formatGameTime(dateTimeString: string): string {
@@ -111,8 +153,6 @@
 		});
 	}
 
-	const game = $derived(boxScore?.game);
-	const status = $derived(game ? getGameStatus(game) : 'scheduled');
 	const statusText = $derived(game ? getStatusText(game) : '');
 	const gameDate = $derived(game ? (() => {
 		// Parse date as local time to avoid timezone shift

@@ -22,6 +22,10 @@
 		const status = getGameStatus(game);
 		if (status === 'final') return 'FINAL';
 		if (status === 'live') {
+			// game.time might already include quarter info, check before adding
+			if (game.time.startsWith('Q') || game.time.startsWith('OT')) {
+				return game.time;
+			}
 			const quarter = game.period <= 4 ? `Q${game.period}` : `OT${game.period - 4}`;
 			return `${quarter} ${game.time}`;
 		}

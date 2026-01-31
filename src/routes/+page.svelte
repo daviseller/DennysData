@@ -27,6 +27,7 @@
 
 	// Track pending request to cancel on new requests
 	let gamesAbortController: AbortController | null = null;
+	let gamesRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
 	const themes = [
 		{ id: 'arena', name: 'Arena', type: 'light' },
@@ -59,16 +60,18 @@
 		}
 	}
 
-	async function loadGames(date: Date) {
+	async function loadGames(date: Date, silent = false) {
 		// Cancel any pending request
 		if (gamesAbortController) {
 			gamesAbortController.abort();
 		}
 		gamesAbortController = new AbortController();
 
-		loading = true;
-		error = null;
-		// Don't close box score when changing dates
+		// Only show loading on initial load, not during silent refresh
+		if (!silent) {
+			loading = true;
+			error = null;
+		}
 
 		const dateStr = formatDateForApi(date);
 		const result = await fetchGames(dateStr, gamesAbortController.signal);
@@ -79,27 +82,46 @@
 		}
 
 		if (result.error) {
-			error = result.error.message;
-			games = [];
+			// Only show error on initial load
+			if (!silent) {
+				error = result.error.message;
+				games = [];
+			}
 		} else {
-			// Sort games by time (earliest to latest)
+			// Sort games: Live first, then Upcoming (by time), then Finished
 			const rawGames = result.data?.data ?? [];
 			games = rawGames.sort((a, b) => {
-				// Try to parse status as datetime for scheduled games
+				const aIsLive = a.period > 0 && a.time && a.status !== 'Final';
+				const bIsLive = b.period > 0 && b.time && b.status !== 'Final';
+				const aIsFinal = a.status === 'Final';
+				const bIsFinal = b.status === 'Final';
+
+				// Live games first
+				if (aIsLive && !bIsLive) return -1;
+				if (!aIsLive && bIsLive) return 1;
+
+				// Finished games last
+				if (aIsFinal && !bIsFinal) return 1;
+				if (!aIsFinal && bIsFinal) return -1;
+
+				// Within same category, sort by start time
 				const timeA = new Date(a.status).getTime();
 				const timeB = new Date(b.status).getTime();
-				// If both are valid dates, sort by time
 				if (!isNaN(timeA) && !isNaN(timeB)) {
 					return timeA - timeB;
 				}
-				// Final/live games go after scheduled games
-				if (!isNaN(timeA)) return -1;
-				if (!isNaN(timeB)) return 1;
 				return 0;
 			});
 		}
 
-		loading = false;
+		if (!silent) {
+			loading = false;
+		}
+	}
+
+	// Check if any games are currently live
+	function hasLiveGames(): boolean {
+		return games.some(game => game.period > 0 && game.time && game.status !== 'Final');
 	}
 
 	function handleDateChange(date: Date) {
@@ -136,6 +158,30 @@
 	// Load games on mount
 	$effect(() => {
 		loadGames(selectedDate);
+	});
+
+	// Auto-refresh games list when there are live games
+	$effect(() => {
+		// Clear any existing interval
+		if (gamesRefreshInterval) {
+			clearInterval(gamesRefreshInterval);
+			gamesRefreshInterval = null;
+		}
+
+		// If there are live games, refresh every 30 seconds
+		if (hasLiveGames()) {
+			gamesRefreshInterval = setInterval(() => {
+				loadGames(selectedDate, true); // silent refresh
+			}, 30000);
+		}
+
+		// Cleanup on unmount
+		return () => {
+			if (gamesRefreshInterval) {
+				clearInterval(gamesRefreshInterval);
+				gamesRefreshInterval = null;
+			}
+		};
 	});
 
 	// Close dropdown on click outside
