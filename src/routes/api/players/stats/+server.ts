@@ -81,16 +81,17 @@ export const GET: RequestHandler = async ({ url }) => {
 		// Fetch injuries separately
 		const { data: injuryData } = await supabase
 			.from('player_injuries')
-			.select('player_id, status, return_date, description')
+			.select('player_id, status, return_date, description, updated_at')
 			.in('player_id', playerIds);
 
 		// Create injury lookup map
-		const injuryMap = new Map<number, { status: string; return_date: string | null; description: string | null }>();
+		const injuryMap = new Map<number, { status: string; return_date: string | null; description: string | null; updated_at: string | null }>();
 		for (const inj of injuryData || []) {
 			injuryMap.set(inj.player_id, {
 				status: inj.status,
 				return_date: inj.return_date,
-				description: inj.description
+				description: inj.description,
+				updated_at: inj.updated_at
 			});
 		}
 

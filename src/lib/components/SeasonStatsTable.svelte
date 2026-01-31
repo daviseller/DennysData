@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PlayerSeasonStats } from '$lib/types';
 	import { getTeamColors } from '$lib/team-colors';
+	import Tooltip from './Tooltip.svelte';
 
 	interface Props {
 		players: PlayerSeasonStats[];
@@ -92,6 +93,28 @@
 		if (val === null || val === undefined) return '-';
 		return (val * 100).toFixed(0) + '%';
 	}
+
+	function formatInjuryTooltip(injury: NonNullable<typeof players[0]['injury']>): string {
+		const parts: string[] = [];
+
+		if (injury.description) {
+			parts.push(injury.description);
+		} else {
+			parts.push(injury.status);
+		}
+
+		if (injury.return_date) {
+			const returnDate = new Date(injury.return_date);
+			parts.push(`Expected return: ${returnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
+		}
+
+		if (injury.updated_at) {
+			const updateDate = new Date(injury.updated_at);
+			parts.push(`Updated: ${updateDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${updateDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`);
+		}
+
+		return parts.join(' \u2022 ');
+	}
 </script>
 
 <div class="stats-table-container">
@@ -179,9 +202,13 @@
 								{player.player.first_name.charAt(0)}. {player.player.last_name}
 							</span>
 							{#if player.injury}
-								<span class="injury-badge injury-{player.injury.status.toLowerCase()}" title={player.injury.description || player.injury.status}>
-									{player.injury.status === 'Out' ? 'OUT' : player.injury.status === 'Doubtful' ? 'DTD' : player.injury.status === 'Questionable' ? 'GTD' : player.injury.status.substring(0, 3).toUpperCase()}
-								</span>
+								<Tooltip content={formatInjuryTooltip(player.injury)} position="right">
+									{#snippet children()}
+										<span class="injury-badge injury-{player.injury.status.toLowerCase()}">
+											{player.injury.status === 'Out' ? 'OUT' : player.injury.status === 'Doubtful' ? 'DTD' : player.injury.status === 'Questionable' ? 'GTD' : player.injury.status.substring(0, 3).toUpperCase()}
+										</span>
+									{/snippet}
+								</Tooltip>
 							{/if}
 						</td>
 						<td class="col-stat">{player.games_played}</td>

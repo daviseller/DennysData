@@ -82,6 +82,43 @@
 	const winner = $derived(getWinner(game));
 	const homeColors = $derived(getTeamColors(game.home_team.abbreviation));
 	const visitorColors = $derived(getTeamColors(game.visitor_team.abbreviation));
+
+	// Brand colors for national networks
+	const NETWORK_COLORS: Record<string, string> = {
+		'ESPN': '#d00',
+		'ESPN2': '#d00',
+		'ABC': '#f59e0b',
+		'NBC': '#6366f1',
+		'NBC Sports': '#6366f1',
+		'Peacock': '#14b8a6',
+		'TNT': '#0052cc',
+		'TBS': '#0052cc',
+		'NBA TV': '#1d428a',
+		'NBATV': '#1d428a',
+		'Prime Video': '#00a8e1',
+		'Amazon Prime': '#00a8e1',
+	};
+
+	// Get national broadcast info
+	const broadcastInfo = $derived.by(() => {
+		if (!game.broadcasts || game.broadcasts.length === 0) return null;
+
+		const national = game.broadcasts.find(b => b.market === 'national');
+		if (national) {
+			return {
+				network: national.network,
+				isNational: true,
+				color: NETWORK_COLORS[national.network] || null
+			};
+		}
+
+		// Not a national broadcast - show League Pass
+		return {
+			network: 'League Pass',
+			isNational: false,
+			color: null
+		};
+	});
 </script>
 
 <a href="/game/{game.id}" class="game-card" class:selected onclick={handleClick}>
@@ -90,6 +127,16 @@
 			<span class="status-dot"></span>
 			{statusText}
 		</span>
+		{#if broadcastInfo && status !== 'final'}
+			<span
+				class="broadcast"
+				class:national={broadcastInfo.isNational}
+				class:local={!broadcastInfo.isNational}
+				style={broadcastInfo.color ? `color: ${broadcastInfo.color}` : ''}
+			>
+				{broadcastInfo.network}
+			</span>
+		{/if}
 	</div>
 
 	<div class="game-teams" class:has-result={status === 'final'}>
@@ -149,9 +196,27 @@
 	}
 
 	.game-status {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		margin-bottom: var(--space-sm);
 		padding-bottom: var(--space-sm);
 		border-bottom: 1px solid var(--border-secondary);
+	}
+
+	.broadcast {
+		font-family: var(--font-stats);
+		font-size: 10px;
+		letter-spacing: 0.02em;
+	}
+
+	.broadcast.national {
+		font-weight: 600;
+	}
+
+	.broadcast.local {
+		font-weight: 400;
+		color: var(--text-muted);
 	}
 
 	.status-indicator {

@@ -26,6 +26,12 @@ export interface Player {
 	team: Team;
 }
 
+// TV/streaming broadcast info
+export interface Broadcast {
+	network: string;
+	market: 'national' | 'home' | 'away';
+}
+
 export interface Game {
 	id: number;
 	date: string;
@@ -38,6 +44,7 @@ export interface Game {
 	home_team_score: number;
 	visitor_team: Team;
 	visitor_team_score: number;
+	broadcasts?: Broadcast[];
 }
 
 export interface PlayerStats {
@@ -159,6 +166,7 @@ export interface PlayerInjury {
 	status: string; // "Out", "Doubtful", "Questionable", "Probable"
 	return_date: string | null;
 	description: string | null;
+	updated_at: string | null;
 }
 
 // Player season stats (from our database)
