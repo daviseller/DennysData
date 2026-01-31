@@ -1,25 +1,22 @@
 # Currently Active
 
 **Plan:** app-setup
-**Session:** None (idle)
-**Last Session:** #5 completed 2026-01-30
+**Session:** None (Session #6 completed)
 **Mode:** Idle
 
 ## Last Session Summary
 
-Session #5 completed Supabase caching:
-- Set up Supabase MCP for direct database management
-- Created games_cache and box_scores_cache tables
-- Implemented cache-first fetching in API routes
-- Cache strategy: historical=forever, recent=5min, live=never
-
-## Remaining for Phase 5
-
+Session #6 completed Phase 5 - Caching & Polish:
 - Skeleton loading states
-- Better error messages
+- Error handling with categorization
 - Keyboard navigation
+- Theme picker as dropdown
+- Cookie-based theme persistence
+- Game sorting by time
+- Center-out stat comparison bars
+- Box score date retention on navigation
+- Fixed timezone bug in date display
 
-## Quick Commands
+## Next Steps
 
-- `/workflow:session-start` - Begin next session
-- `/workflow:status` - Check plan status
+Ready for Phase 6 (Data Viz with Layercake) or Phase 7 (Production/SEO).

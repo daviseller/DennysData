@@ -155,11 +155,6 @@
 	const showBoxScore = $derived(selectedGame !== null);
 	const currentThemeInfo = $derived(themes.find(t => t.id === currentTheme));
 	const selectedGameId = $derived(selectedGame?.id ?? null);
-	const selectedGameDate = $derived(selectedGame ? new Date(selectedGame.date).toLocaleDateString('en-US', {
-		weekday: 'short',
-		month: 'short',
-		day: 'numeric'
-	}).toUpperCase() : null);
 </script>
 
 <div class="container" class:has-panel={showBoxScore}>
@@ -244,9 +239,6 @@
 		<aside class="box-score-sidebar">
 			<div class="sidebar-header">
 				<span class="label">BOX SCORE</span>
-				{#if selectedGameDate}
-					<span class="sidebar-date">{selectedGameDate}</span>
-				{/if}
 				<button class="close-btn" onclick={handleCloseBoxScore} aria-label="Close box score">
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M18 6L6 18M6 6l12 12"/>
@@ -294,21 +286,13 @@
 		border-bottom: 1px solid var(--border-secondary);
 	}
 
-	.sidebar-date {
-		font-family: var(--font-stats);
-		font-size: 11px;
-		font-weight: 500;
-		letter-spacing: 0.03em;
-		color: var(--text-secondary);
-		margin-left: auto;
-	}
-
 	.close-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 28px;
 		height: 28px;
+		margin-left: auto;
 		background: var(--bg-inset);
 		border: 1px solid var(--border-primary);
 		border-radius: var(--radius-sm);
