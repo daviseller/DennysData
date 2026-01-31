@@ -1,3 +1,8 @@
+<script lang="ts" module>
+	// Module context - shared across all instances
+	let sharedCombinedView = $state(false);
+</script>
+
 <script lang="ts">
 	import { fetchBoxScore } from '$lib/api';
 	import { getTeamColors } from '$lib/team-colors';
@@ -15,7 +20,12 @@
 	let boxScore = $state<BoxScore | null>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
-	let combinedView = $state(false);
+
+	// Use module-level state for view preference (persists across instances)
+	const combinedView = {
+		get value() { return sharedCombinedView; },
+		set value(v: boolean) { sharedCombinedView = v; }
+	};
 
 	// Track pending request to cancel on new requests
 	let abortController: AbortController | null = null;
@@ -222,21 +232,21 @@
 			<div class="view-toggle">
 				<button
 					class="toggle-btn"
-					class:active={!combinedView}
-					onclick={() => combinedView = false}
+					class:active={!combinedView.value}
+					onclick={() => combinedView.value = false}
 				>
 					BY TEAM
 				</button>
 				<button
 					class="toggle-btn"
-					class:active={combinedView}
-					onclick={() => combinedView = true}
+					class:active={combinedView.value}
+					onclick={() => combinedView.value = true}
 				>
 					COMBINED
 				</button>
 			</div>
 
-			{#if combinedView}
+			{#if combinedView.value}
 				<section class="stats-section">
 					<StatsTable
 						players={combinedPlayers}
