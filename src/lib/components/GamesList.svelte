@@ -18,6 +18,17 @@
 	function handleGameSelect(game: Game) {
 		if (onSelectGame) {
 			onSelectGame(game);
+
+			// On mobile, scroll to show the selected game at top after box score renders
+			if (window.innerWidth <= 900) {
+				// Small delay to let the box score render
+				setTimeout(() => {
+					const element = document.querySelector(`[data-game-id="${game.id}"]`);
+					if (element) {
+						element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}
+				}, 50);
+			}
 		}
 	}
 
@@ -91,7 +102,7 @@
 {:else}
 	<div class="games-list">
 		{#each games as game (game.id)}
-			<div class="game-item">
+			<div class="game-item" data-game-id={game.id}>
 				<GameCard
 					{game}
 					selected={selectedGameId === game.id}
