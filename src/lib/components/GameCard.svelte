@@ -75,14 +75,14 @@
 
 	<div class="game-teams" class:has-result={status === 'final'}>
 		<div class="team-row" class:winner={winner === 'visitor'}>
-			<span class="team-color" style="background: linear-gradient(135deg, {visitorColors.primary} 49%, {visitorColors.secondary} 51%)"></span>
+			<span class="team-color" class:muted={status === 'final' && winner === 'home'} style="background: linear-gradient(135deg, {visitorColors.primary} 49%, {visitorColors.secondary} 51%)"></span>
 			<span class="team-abbr">{game.visitor_team.abbreviation}</span>
 			<span class="score" class:stat-leader={winner === 'visitor'}>
 				{status === 'scheduled' ? '-' : game.visitor_team_score}
 			</span>
 		</div>
 		<div class="team-row" class:winner={winner === 'home'}>
-			<span class="team-color" style="background: linear-gradient(135deg, {homeColors.primary} 49%, {homeColors.secondary} 51%)"></span>
+			<span class="team-color" class:muted={status === 'final' && winner === 'visitor'} style="background: linear-gradient(135deg, {homeColors.primary} 49%, {homeColors.secondary} 51%)"></span>
 			<span class="team-abbr">{game.home_team.abbreviation}</span>
 			<span class="score" class:stat-leader={winner === 'home'}>
 				{status === 'scheduled' ? '-' : game.home_team_score}
@@ -178,6 +178,10 @@
 		height: 14px;
 		border-radius: 1px;
 		flex-shrink: 0;
+	}
+
+	.team-color.muted {
+		opacity: 0.4;
 	}
 
 	.team-abbr {
