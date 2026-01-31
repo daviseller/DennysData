@@ -330,9 +330,13 @@
 	}
 
 	.box-score-sidebar {
+		position: sticky;
+		top: var(--space-lg);
+		max-height: calc(100vh - var(--space-lg) * 2);
 		display: flex;
 		flex-direction: column;
 		background: var(--bg-app);
+		overflow-y: auto;
 	}
 
 	.sidebar-header {
@@ -372,11 +376,9 @@
 		min-width: 0;
 	}
 
-	/* When panel is open, make games list scrollable and sticky */
-	.container.has-panel .main-content {
-		position: sticky;
-		top: var(--space-lg);
-		max-height: calc(100vh - var(--space-lg) * 2);
+	/* When panel is open, make games list scrollable */
+	.container.has-panel .games-section {
+		max-height: calc(100vh - 200px);
 		overflow-y: auto;
 		padding-right: var(--space-xs);
 	}

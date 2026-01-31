@@ -15,6 +15,7 @@
 	let boxScore = $state<BoxScore | null>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	let combinedView = $state(false);
 
 	// Track pending request to cancel on new requests
 	let abortController: AbortController | null = null;
@@ -169,6 +170,7 @@
 	const visitorColors = $derived(game ? getTeamColors(game.visitor_team.abbreviation) : { primary: '#666', secondary: '#333' });
 	const hasStats = $derived(boxScore && (boxScore.home_team.players.length > 0 || boxScore.visitor_team.players.length > 0));
 	const errorInfo = $derived(error ? getErrorInfo(error) : null);
+	const combinedPlayers = $derived(boxScore ? [...boxScore.visitor_team.players, ...boxScore.home_team.players] : []);
 </script>
 
 <div class="box-score-panel">
@@ -217,30 +219,56 @@
 		</div>
 
 		{#if hasStats}
+			<div class="view-toggle">
+				<button
+					class="toggle-btn"
+					class:active={!combinedView}
+					onclick={() => combinedView = false}
+				>
+					BY TEAM
+				</button>
+				<button
+					class="toggle-btn"
+					class:active={combinedView}
+					onclick={() => combinedView = true}
+				>
+					COMBINED
+				</button>
+			</div>
+
+			{#if combinedView}
+				<section class="stats-section">
+					<StatsTable
+						players={combinedPlayers}
+						showTeamColumn={true}
+					/>
+				</section>
+			{:else}
+				<section class="stats-section">
+					<StatsTable
+						players={boxScore.visitor_team.players}
+						totals={boxScore.visitor_team.totals}
+						teamColor={visitorColors.primary}
+						teamAbbr={game.visitor_team.abbreviation}
+					/>
+				</section>
+
+				<section class="stats-section">
+					<StatsTable
+						players={boxScore.home_team.players}
+						totals={boxScore.home_team.totals}
+						teamColor={homeColors.primary}
+						teamAbbr={game.home_team.abbreviation}
+					/>
+				</section>
+			{/if}
+
 			<section class="stats-section">
 				<TeamTotals
 					homeTeam={boxScore.home_team}
 					visitorTeam={boxScore.visitor_team}
 					homeColor={homeColors.primary}
 					visitorColor={visitorColors.primary}
-				/>
-			</section>
-
-			<section class="stats-section">
-				<StatsTable
-					players={boxScore.visitor_team.players}
-					totals={boxScore.visitor_team.totals}
-					teamColor={visitorColors.primary}
-					teamAbbr={game.visitor_team.abbreviation}
-				/>
-			</section>
-
-			<section class="stats-section">
-				<StatsTable
-					players={boxScore.home_team.players}
-					totals={boxScore.home_team.totals}
-					teamColor={homeColors.primary}
-					teamAbbr={game.home_team.abbreviation}
 				/>
 			</section>
 		{:else}
@@ -259,6 +287,42 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		max-width: 100%;
+	}
+
+	/* View Toggle */
+	.view-toggle {
+		display: flex;
+		gap: 2px;
+		margin-bottom: var(--space-md);
+		background: var(--bg-inset);
+		border: 1px solid var(--border-primary);
+		border-radius: var(--radius-sm);
+		padding: 2px;
+	}
+
+	.toggle-btn {
+		flex: 1;
+		padding: var(--space-xs) var(--space-sm);
+		font-family: var(--font-stats);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.03em;
+		color: var(--text-muted);
+		background: transparent;
+		border: none;
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.toggle-btn:hover {
+		color: var(--text-primary);
+	}
+
+	.toggle-btn.active {
+		color: var(--text-primary);
+		background: var(--bg-card);
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 	}
 
 	/* Error State */

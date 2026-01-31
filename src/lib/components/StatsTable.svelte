@@ -1,14 +1,16 @@
 <script lang="ts">
 	import type { PlayerStats, TeamTotals } from '$lib/types';
+	import { getTeamColors } from '$lib/team-colors';
 
 	interface Props {
 		players: PlayerStats[];
-		totals: TeamTotals;
-		teamColor: string;
-		teamAbbr: string;
+		totals?: TeamTotals;
+		teamColor?: string;
+		teamAbbr?: string;
+		showTeamColumn?: boolean;
 	}
 
-	let { players, totals, teamColor, teamAbbr }: Props = $props();
+	let { players, totals, teamColor, teamAbbr, showTeamColumn = false }: Props = $props();
 
 	type SortKey = 'name' | 'min' | 'pts' | 'reb' | 'ast' | 'stl' | 'blk' | 'fg' | 'fg3' | 'ft';
 	type SortDir = 'asc' | 'desc';
@@ -90,11 +92,11 @@
 		}
 	}
 
-	function findLeader(key: 'pts' | 'reb' | 'ast' | 'stl' | 'blk'): number {
-		if (players.length === 0) return -1;
+	function findLeaderFromList(list: PlayerStats[], key: 'pts' | 'reb' | 'ast' | 'stl' | 'blk'): number {
+		if (list.length === 0) return -1;
 		let maxVal = -1;
 		let maxId = -1;
-		for (const p of players) {
+		for (const p of list) {
 			if (p[key] > maxVal) {
 				maxVal = p[key];
 				maxId = p.player.id;
@@ -103,15 +105,27 @@
 		return maxVal > 0 ? maxId : -1;
 	}
 
-	const sortedPlayers = $derived(sortPlayers(players, sortKey, sortDir));
-	const ptsLeader = $derived(findLeader('pts'));
-	const rebLeader = $derived(findLeader('reb'));
-	const astLeader = $derived(findLeader('ast'));
+	// Filter out players with 0:00 minutes (didn't play)
+	const activePlayers = $derived(players.filter(p => {
+		if (!p.min) return false;
+		const parts = p.min.split(':');
+		const mins = parseInt(parts[0]) || 0;
+		const secs = parseInt(parts[1]) || 0;
+		return mins > 0 || secs > 0;
+	}));
+	const sortedPlayers = $derived(sortPlayers(activePlayers, sortKey, sortDir));
+	const ptsLeader = $derived(findLeaderFromList(activePlayers, 'pts'));
+	const rebLeader = $derived(findLeaderFromList(activePlayers, 'reb'));
+	const astLeader = $derived(findLeaderFromList(activePlayers, 'ast'));
 
 	function formatMinutes(min: string): string {
 		if (!min) return '-';
+		// Format as M:SS (remove leading zero from minutes if present)
 		const parts = min.split(':');
-		return parts[0] || '-';
+		if (parts.length < 2) return min;
+		const mins = parseInt(parts[0]) || 0;
+		const secs = parts[1].padStart(2, '0');
+		return `${mins}:${secs}`;
 	}
 
 	function formatShootingLine(made: number, attempted: number): string {
@@ -121,15 +135,20 @@
 </script>
 
 <div class="stats-table-container">
-	<div class="table-header">
-		<span class="team-color-bar" style="background: {teamColor}"></span>
-		<span class="team-label">{teamAbbr}</span>
-	</div>
+	{#if teamAbbr && teamColor}
+		<div class="table-header">
+			<span class="team-color-bar" style="background: {teamColor}"></span>
+			<span class="team-label">{teamAbbr}</span>
+		</div>
+	{/if}
 
 	<div class="table-scroll">
 		<table class="stats-table">
 			<thead>
 				<tr>
+					{#if showTeamColumn}
+						<th class="col-team">TEAM</th>
+					{/if}
 					<th class="col-player">
 						<button class="sort-btn" class:active={sortKey === 'name'} onclick={() => handleSort('name')}>
 							PLAYER
@@ -215,6 +234,12 @@
 			<tbody>
 				{#each sortedPlayers as player (player.player.id)}
 					<tr>
+						{#if showTeamColumn}
+							<td class="col-team">
+								<span class="team-color-pip" style="background: {getTeamColors(player.team.abbreviation).primary}"></span>
+								{player.team.abbreviation}
+							</td>
+						{/if}
 						<td class="col-player">
 							<span class="player-name">
 								{player.player.first_name.charAt(0)}. {player.player.last_name}
@@ -232,20 +257,25 @@
 					</tr>
 				{/each}
 			</tbody>
-			<tfoot>
-				<tr class="totals-row">
-					<td class="col-player">TOTALS</td>
-					<td class="col-stat">-</td>
-					<td class="col-stat">{totals.pts}</td>
-					<td class="col-stat">{totals.reb}</td>
-					<td class="col-stat">{totals.ast}</td>
-					<td class="col-stat">{totals.stl}</td>
-					<td class="col-stat">{totals.blk}</td>
-					<td class="col-shooting">{formatShootingLine(totals.fgm, totals.fga)}</td>
-					<td class="col-shooting">{formatShootingLine(totals.fg3m, totals.fg3a)}</td>
-					<td class="col-shooting">{formatShootingLine(totals.ftm, totals.fta)}</td>
-				</tr>
-			</tfoot>
+			{#if totals}
+				<tfoot>
+					<tr class="totals-row">
+						{#if showTeamColumn}
+							<td class="col-team"></td>
+						{/if}
+						<td class="col-player">TOTALS</td>
+						<td class="col-stat">-</td>
+						<td class="col-stat">{totals.pts}</td>
+						<td class="col-stat">{totals.reb}</td>
+						<td class="col-stat">{totals.ast}</td>
+						<td class="col-stat">{totals.stl}</td>
+						<td class="col-stat">{totals.blk}</td>
+						<td class="col-shooting">{formatShootingLine(totals.fgm, totals.fga)}</td>
+						<td class="col-shooting">{formatShootingLine(totals.fg3m, totals.fg3a)}</td>
+						<td class="col-shooting">{formatShootingLine(totals.ftm, totals.fta)}</td>
+					</tr>
+				</tfoot>
+			{/if}
 		</table>
 	</div>
 </div>
@@ -316,6 +346,28 @@
 	th.col-player {
 		text-align: left;
 		padding-left: var(--space-md);
+	}
+
+	th.col-team,
+	td.col-team {
+		text-align: left;
+		padding-left: var(--space-md);
+		font-weight: 600;
+		color: var(--text-muted);
+		min-width: 48px;
+	}
+
+	td.col-team {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.team-color-pip {
+		width: 3px;
+		height: 14px;
+		border-radius: 1px;
+		flex-shrink: 0;
 	}
 
 	.sort-btn {
