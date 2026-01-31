@@ -141,9 +141,10 @@
 </script>
 
 <div class="stats-table-container">
-	{#if teamAbbr && teamColor}
+	{#if teamAbbr}
+		{@const colors = getTeamColors(teamAbbr)}
 		<div class="table-header">
-			<span class="team-color-bar" style="background: {teamColor}"></span>
+			<span class="team-color-bar" style="background: linear-gradient(135deg, {colors.primary} 49%, {colors.secondary} 51%)"></span>
 			<span class="team-label">{teamAbbr}</span>
 		</div>
 	{/if}
@@ -241,8 +242,9 @@
 				{#each sortedPlayers as player (player.player.id)}
 					<tr>
 						{#if showTeamColumn}
+							{@const playerColors = getTeamColors(player.team.abbreviation)}
 							<td class="col-team">
-								<span class="team-color-pip" style="background: {getTeamColors(player.team.abbreviation).primary}"></span>
+								<span class="team-color-pip" style="background: linear-gradient(135deg, {playerColors.primary} 49%, {playerColors.secondary} 51%)"></span>
 								{player.team.abbreviation}
 							</td>
 						{/if}
@@ -305,8 +307,8 @@
 	}
 
 	.team-color-bar {
-		width: 4px;
-		height: 20px;
+		width: 14px;
+		height: 14px;
 		border-radius: 1px;
 		flex-shrink: 0;
 	}
@@ -370,8 +372,8 @@
 	}
 
 	.team-color-pip {
-		width: 3px;
-		height: 14px;
+		width: 10px;
+		height: 10px;
 		border-radius: 1px;
 		flex-shrink: 0;
 	}

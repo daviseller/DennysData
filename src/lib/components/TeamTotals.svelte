@@ -1,14 +1,15 @@
 <script lang="ts">
 	import type { TeamBoxScore } from '$lib/types';
+	import type { TeamColors } from '$lib/team-colors';
 
 	interface Props {
 		homeTeam: TeamBoxScore;
 		visitorTeam: TeamBoxScore;
-		homeColor: string;
-		visitorColor: string;
+		homeColors: TeamColors;
+		visitorColors: TeamColors;
 	}
 
-	let { homeTeam, visitorTeam, homeColor, visitorColor }: Props = $props();
+	let { homeTeam, visitorTeam, homeColors, visitorColors }: Props = $props();
 
 	interface StatComparison {
 		label: string;
@@ -111,13 +112,13 @@
 <div class="team-totals">
 	<div class="totals-header">
 		<div class="team-col visitor">
-			<span class="team-color" style="background: {visitorColor}"></span>
+			<span class="team-color" style="background: linear-gradient(135deg, {visitorColors.primary} 49%, {visitorColors.secondary} 51%)"></span>
 			<span class="team-abbr">{visitorTeam.team.abbreviation}</span>
 		</div>
 		<div class="label-col">TEAM STATS</div>
 		<div class="team-col home">
 			<span class="team-abbr">{homeTeam.team.abbreviation}</span>
-			<span class="team-color" style="background: {homeColor}"></span>
+			<span class="team-color" style="background: linear-gradient(135deg, {homeColors.primary} 49%, {homeColors.secondary} 51%)"></span>
 		</div>
 	</div>
 
@@ -135,7 +136,7 @@
 						<div
 							class="bar"
 							class:winner={winner === 'visitor'}
-							style="width: {visitorWidth}%; background: {visitorColor}"
+							style="width: {visitorWidth}%; background: {visitorColors.primary}"
 						></div>
 					</div>
 					<span class="stat-label">{stat.label}</span>
@@ -143,7 +144,7 @@
 						<div
 							class="bar"
 							class:winner={winner === 'home'}
-							style="width: {homeWidth}%; background: {homeColor}"
+							style="width: {homeWidth}%; background: {homeColors.primary}"
 						></div>
 					</div>
 				</div>
@@ -187,8 +188,8 @@
 	}
 
 	.team-color {
-		width: 4px;
-		height: 20px;
+		width: 14px;
+		height: 14px;
 		border-radius: 1px;
 		flex-shrink: 0;
 	}

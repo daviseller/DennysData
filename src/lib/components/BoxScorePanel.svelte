@@ -193,7 +193,7 @@
 		<div class="game-header">
 			<div class="game-matchup">
 				<div class="team visitor">
-					<span class="team-color" style="background: {visitorColors.primary}"></span>
+					<span class="team-color" style="background: linear-gradient(135deg, {visitorColors.primary} 49%, {visitorColors.secondary} 51%)"></span>
 					<span class="team-abbr">{game.visitor_team.abbreviation}</span>
 					<span class="team-score" class:winner={status === 'final' && game.visitor_team_score > game.home_team_score}>
 						{status === 'scheduled' ? '-' : game.visitor_team_score}
@@ -213,7 +213,7 @@
 						{status === 'scheduled' ? '-' : game.home_team_score}
 					</span>
 					<span class="team-abbr">{game.home_team.abbreviation}</span>
-					<span class="team-color" style="background: {homeColors.primary}"></span>
+					<span class="team-color" style="background: linear-gradient(135deg, {homeColors.primary} 49%, {homeColors.secondary} 51%)"></span>
 				</div>
 			</div>
 		</div>
@@ -267,8 +267,8 @@
 				<TeamTotals
 					homeTeam={boxScore.home_team}
 					visitorTeam={boxScore.visitor_team}
-					homeColor={homeColors.primary}
-					visitorColor={visitorColors.primary}
+					homeColors={homeColors}
+					visitorColors={visitorColors}
 				/>
 			</section>
 		{:else}
@@ -413,8 +413,8 @@
 	}
 
 	.team-color {
-		width: 4px;
-		height: 32px;
+		width: 16px;
+		height: 16px;
 		border-radius: 1px;
 		flex-shrink: 0;
 	}

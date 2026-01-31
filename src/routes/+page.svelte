@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { fetchGames, formatDateForApi } from '$lib/api';
 	import type { Game } from '$lib/types';
 	import DayPicker from '$lib/components/DayPicker.svelte';
@@ -259,7 +260,7 @@
 	}
 
 	// Initialize on mount
-	$effect(() => {
+	onMount(() => {
 		initializeDate();
 	});
 
