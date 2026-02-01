@@ -2,20 +2,21 @@
 
 ## Focus: Phase 5 Completion - Polish & UX
 
-### Objectives
-
-1. Add skeleton loading states
-2. Improve error messages
-3. Add keyboard navigation to day picker
-4. Optional: Auto-refresh for live games
+### Completed Recently
+- [x] Player game log tab with per-game stats
+- [x] DNP game display
+- [x] Season selector for game log
 
 ### Carry-Forward Tasks
-
-These were planned but not completed in Session 5:
 
 - [ ] Skeleton loaders for game cards and box score
 - [ ] Better error messages with retry options
 - [ ] Keyboard navigation for day picker (arrow keys)
+
+### New Ideas from Session 8
+- [ ] Click game in game log to navigate to that box score
+- [ ] Summary stats at top of game log (season averages)
+- [ ] Career totals row in season stats
 
 ### Implementation Ideas
 
@@ -36,13 +37,12 @@ These were planned but not completed in Session 5:
 
 ### Optional Enhancements
 
-- Auto-refresh for live games (30s polling)
 - Quarter-by-quarter scoring breakdown
 - Calendar picker for jumping to specific dates
 - Stale-while-revalidate pattern for smoother UX
 
 ### Context
 
-- Supabase caching is working (games_cache, box_scores_cache)
-- Cache populates as users browse
+- Supabase caching is working (games_cache, box_scores_cache, player_game_log)
+- Player game log caches as users browse player profiles
 - Project ID: `rwzhinwyohngxvatahvg`

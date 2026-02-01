@@ -104,6 +104,146 @@ def get_output_style():
     return None
 
 
+
+
+
+def get_last_command_status():
+    """Get last command execution statistics."""
+    # Try to read from a command history file if available
+    history_file = Path('.last_command.json')
+    if not history_file.exists():
+        return None
+
+    try:
+        with open(history_file, 'r') as f:
+            last_cmd = json.load(f)
+
+        # Extract command info
+        cmd_name = last_cmd.get('command', '').split()[0].split('/')[-1].split('\\')[-1]
+        exit_code = last_cmd.get('exit_code', 0)
+        exec_time = last_cmd.get('execution_time', 0)
+        timestamp = last_cmd.get('timestamp', 0)
+
+        # Only show recent commands (within last 5 minutes)
+        if time.time() - timestamp > 300:
+            return None
+
+        # Abbreviate common commands
+        cmd_abbrev = {
+            'npm': 'npm',
+            'npm.cmd': 'npm',
+            'yarn': 'yarn',
+            'yarn.cmd': 'yarn',
+            'git': 'git',
+            'git.exe': 'git',
+            'dotnet': 'dotnet',
+            'dotnet.exe': 'dotnet',
+            'ng': 'ng',
+            'ng.cmd': 'ng',
+            'python': 'py',
+            'python.exe': 'py',
+            'docker': 'docker',
+            'kubectl': 'k8s',
+            'powershell': 'ps',
+            'pwsh': 'ps',
+            'cmd': 'cmd'
+        }.get(cmd_name.lower(), cmd_name[:3] if cmd_name else '?')
+
+        # Build status string
+        parts = []
+
+        # Add command name
+        if cmd_abbrev:
+            parts.append(cmd_abbrev)
+
+        # Add exit status
+        if exit_code == 0:
+            parts.append('✅')
+        elif exit_code == 1:
+            parts.append('⚠️')
+        else:
+            parts.append(f'❌{exit_code}')
+
+        # Add execution time with performance indicator
+        if exec_time > 0:
+            if exec_time < 1:
+                time_str = f'{exec_time:.1f}s'
+                perf = '🚀'  # Fast
+            elif exec_time < 10:
+                time_str = f'{exec_time:.1f}s'
+                perf = '⏱️'  # Normal
+            elif exec_time < 60:
+                time_str = f'{exec_time:.0f}s'
+                perf = '🐌'  # Slow
+            else:
+                minutes = int(exec_time // 60)
+                seconds = int(exec_time % 60)
+                time_str = f'{minutes}m{seconds}s' if seconds else f'{minutes}m'
+                perf = '⏰'  # Very slow
+
+            # Only show time if > 2 seconds or if command failed
+            if exec_time > 2 or exit_code != 0:
+                parts.append(time_str)
+                if exec_time > 10:  # Only show performance indicator for slow commands
+                    parts.append(perf)
+
+        return ' '.join(parts) if parts else None
+
+    except (json.JSONDecodeError, IOError, KeyError):
+        return None
+
+
+def get_active_plan():
+    """Get the currently active workflow plan from ACTIVE.md."""
+    active_file = Path('.claude/ACTIVE.md')
+    if not active_file.exists():
+        return None
+
+    try:
+        with open(active_file, 'r') as f:
+            content = f.read()
+
+        # Parse the **Plan:** line
+        for line in content.split('\n'):
+            if line.startswith('**Plan:**'):
+                plan_name = line.replace('**Plan:**', '').strip()
+                if plan_name and plan_name.lower() != 'none':
+                    return plan_name
+    except IOError:
+        pass
+
+    return None
+
+
+def get_orchestrate_status():
+    """Get count of currently running orchestrate commands."""
+    orchestrate_file = Path('.claude/state/orchestrate-active.json')
+    if not orchestrate_file.exists():
+        return None
+
+    try:
+        with open(orchestrate_file, 'r') as f:
+            orchestrate_data = json.load(f)
+
+        # Count active executions
+        if isinstance(orchestrate_data, list):
+            active_count = len([item for item in orchestrate_data if item.get('status') == 'running'])
+            failed_count = len([item for item in orchestrate_data if item.get('status') == 'failed'])
+
+            if active_count > 0 or failed_count > 0:
+                parts = []
+                if active_count > 0:
+                    parts.append(f"🎼 {active_count}")  # Running orchestrate commands
+                if failed_count > 0:
+                    parts.append(f"❌ {failed_count}")  # Failed orchestrate commands
+                return " ".join(parts)
+
+    except (json.JSONDecodeError, IOError):
+        pass
+
+    return None
+
+
 def get_token_usage(input_data):
     """Calculate and format token usage from context_window data."""
     context_window = input_data.get('context_window', {})
@@ -137,48 +277,20 @@ def get_token_usage(input_data):
     return f"{color}{percent_used}%\033[0m"
 
 
-def get_workflow_status():
-    """Get current workflow plan status if active."""
-    active_file = Path('.claude/ACTIVE.md')
-    if not active_file.exists():
-        return None
-
-    try:
-        with open(active_file, 'r') as f:
-            content = f.read()
-
-        # Look for active plan
-        for line in content.split('\n'):
-            if line.startswith('**Plan:**'):
-                plan = line.replace('**Plan:**', '').strip()
-                if plan and plan != 'None':
-                    return f"📋 {plan}"
-    except IOError:
-        pass
-
-    return None
 
 
 def generate_status_line(input_data):
     """Generate the status line based on input data."""
     parts = []
 
-    # Model display name
-    model_info = input_data.get('model', {})
-    model_name = model_info.get('display_name', 'Claude')
-    parts.append(f"\033[36m[{model_name}]\033[0m")  # Cyan color
+    # 1. Current working directory
+    workspace = input_data.get('workspace', {})
+    current_dir = workspace.get('current_dir', '')
+    if current_dir:
+        dir_name = os.path.basename(current_dir)
+        parts.append(f"\033[34m{dir_name}/\033[0m")  # Blue color
 
-    # Token usage (context window)
-    token_usage = get_token_usage(input_data)
-    if token_usage:
-        parts.append(token_usage)
-
-    # Output style indicator
-    output_style = get_output_style()
-    if output_style:
-        parts.append(f"\033[35m{output_style}\033[0m")  # Magenta color
-
-    # Git branch and status
+    # 2. Git branch and status
     git_branch = get_git_branch()
     if git_branch:
         git_status = get_git_status()
@@ -187,10 +299,30 @@ def generate_status_line(input_data):
             git_info += f" {git_status}"
         parts.append(f"\033[32m{git_info}\033[0m")  # Green color
 
-    # Workflow status
-    workflow_status = get_workflow_status()
-    if workflow_status:
-        parts.append(f"\033[33m{workflow_status}\033[0m")  # Yellow color
+    # 3. Token usage (context window)
+    token_usage = get_token_usage(input_data)
+    if token_usage:
+        parts.append(token_usage)
+
+    # 4. Model display name
+    model_info = input_data.get('model', {})
+    model_name = model_info.get('display_name', 'Claude')
+    parts.append(f"\033[36m[{model_name}]\033[0m")  # Cyan color
+
+    # Output style indicator
+    output_style = get_output_style()
+    if output_style:
+        parts.append(f"\033[35m{output_style}\033[0m")  # Magenta color
+
+    # Last command status
+    last_cmd = get_last_command_status()
+    if last_cmd:
+        parts.append(f"\033[96mLast: {last_cmd}\033[0m")  # Bright cyan color
+
+    # Orchestrate commands status
+    orchestrate_status = get_orchestrate_status()
+    if orchestrate_status:
+        parts.append(f"\033[37m{orchestrate_status}\033[0m")  # White color
 
     # Version info (optional, smaller)
     version = input_data.get('version', '')

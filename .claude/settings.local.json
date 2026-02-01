@@ -4,8 +4,10 @@
     "deny": [],
     "defaultMode": "acceptEdits"
   },
-  "statusLine": {
-    "type": "command",
-    "command": ".claude\\status_lines\\run_status_line.bat"
-  }
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "svelte",
+    "supabase"
+  ],
+  "outputStyle": "Explanatory"
 }

@@ -1,22 +1,18 @@
 # Currently Active
 
 **Plan:** app-setup
-**Session:** None (Session #6 completed)
+**Session:** None (last: #8 on 2026-01-31)
 **Mode:** Idle
 
 ## Last Session Summary
 
-Session #6 completed Phase 5 - Caching & Polish:
-- Skeleton loading states
-- Error handling with categorization
-- Keyboard navigation
-- Theme picker as dropdown
-- Cookie-based theme persistence
-- Game sorting by time
-- Center-out stat comparison bars
-- Box score date retention on navigation
-- Fixed timezone bug in date display
+Session #8 - Player game log feature:
+- Added player_game_log table to cache per-game stats
+- Created /api/player/[id]/gamelog endpoint
+- Added "Game Log" tab to player profile panel
+- Season selector dropdown for filtering
+- DNP games shown with muted styling
+- Scrollable table with sticky header
 
-## Next Steps
-
-Ready for Phase 6 (Data Viz with Layercake) or Phase 7 (Production/SEO).
+## To Resume
+`/workflow:session-start`
