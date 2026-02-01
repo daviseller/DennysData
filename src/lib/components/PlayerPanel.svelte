@@ -514,9 +514,28 @@
 			</div>
 
 			{#if gameLogLoading}
-				<div class="loading-state">
-					<div class="spinner"></div>
-					<span>Loading game log...</span>
+				<!-- Game log skeleton -->
+				<div class="table-scroll gamelog-scroll">
+					<div class="gamelog-skeleton">
+						<div class="skeleton-header">
+							<div class="skeleton-line skeleton-th-date"></div>
+							<div class="skeleton-line skeleton-th-opp"></div>
+							<div class="skeleton-line skeleton-th-result"></div>
+							{#each Array(9) as _}
+								<div class="skeleton-line skeleton-th-stat"></div>
+							{/each}
+						</div>
+						{#each Array(12) as _}
+							<div class="skeleton-row">
+								<div class="skeleton-line skeleton-date"></div>
+								<div class="skeleton-line skeleton-opp"></div>
+								<div class="skeleton-line skeleton-result"></div>
+								{#each Array(9) as _}
+									<div class="skeleton-line skeleton-stat-cell"></div>
+								{/each}
+							</div>
+						{/each}
+					</div>
 				</div>
 			{:else if gameLogError}
 				<div class="error-inline">
@@ -1297,6 +1316,87 @@
 
 	.row-team-split td.col-team {
 		padding-left: calc(var(--space-md) + var(--space-sm));
+	}
+
+	/* Game log skeleton */
+	.gamelog-skeleton {
+		background: var(--bg-card);
+	}
+
+	.gamelog-skeleton .skeleton-line {
+		background: var(--bg-inset);
+		border-radius: var(--radius-sm);
+		animation: skeleton-pulse 1.5s ease-in-out infinite;
+	}
+
+	.skeleton-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md);
+		background: var(--bg-inset);
+		border-bottom: 1px solid var(--border-secondary);
+	}
+
+	.skeleton-th-date {
+		width: 40px;
+		height: 10px;
+	}
+
+	.skeleton-th-opp {
+		width: 30px;
+		height: 10px;
+	}
+
+	.skeleton-th-result {
+		width: 45px;
+		height: 10px;
+	}
+
+	.skeleton-th-stat {
+		width: 28px;
+		height: 10px;
+	}
+
+	.skeleton-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md);
+		border-bottom: 1px solid var(--border-secondary);
+	}
+
+	.skeleton-row:last-child {
+		border-bottom: none;
+	}
+
+	.skeleton-date {
+		width: 50px;
+		height: 12px;
+	}
+
+	.skeleton-opp {
+		width: 45px;
+		height: 12px;
+	}
+
+	.skeleton-result {
+		width: 55px;
+		height: 12px;
+	}
+
+	.skeleton-stat-cell {
+		width: 28px;
+		height: 12px;
+	}
+
+	@keyframes skeleton-pulse {
+		0%, 100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.4;
+		}
 	}
 
 	@media (max-width: 640px) {

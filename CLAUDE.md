@@ -136,6 +136,44 @@ mcp__supabase__execute_sql(project_id, query)
 mcp__supabase__list_tables(project_id, schemas: ["public"])
 ```
 
+## Port Reservation
+
+This project uses a shared port reservation system (`portman`) to avoid conflicts when multiple projects run simultaneously.
+
+### On Session Start
+Check what ports this project has reserved:
+```bash
+portman reserved
+```
+
+### Before Running Dev Server
+1. Check if our ports are available:
+   ```bash
+   portman check 5173
+   ```
+2. Reserve ports if not already reserved:
+   ```bash
+   portman reserve 5173 --label frontend
+   ```
+3. Then start the dev server with the reserved port.
+
+### Common Commands
+```bash
+portman reserved              # Show this project's port reservations
+portman reserved --all        # Show all projects' reservations
+portman check <port>          # Check if port is available (and who reserved it)
+portman reserve <port> --label <name>  # Reserve a port for this project
+portman unreserve <port>      # Release a port reservation
+portman available 3000 4000   # Find an available port in range
+portman kill <port>           # Kill process using a port
+```
+
+### Port Allocation
+When picking ports, use `portman check` first to avoid conflicts with other running projects. If a port is taken, either:
+- Kill the process with `portman kill <port>` if it's stale
+- Use `portman available <start> <end>` to find a free port
+- Check `portman reserved --all` to see what other projects are using
+
 ## Workflow
 
 Plans and session tracking are in `.claude/plans/`. See `.claude/INDEX.md` for current status.
