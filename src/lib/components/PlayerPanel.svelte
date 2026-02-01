@@ -9,9 +9,10 @@
 	interface Props {
 		playerId: number;
 		onClose?: () => void;
+		onGameClick?: (gameId: number, date: string) => void;
 	}
 
-	let { playerId, onClose }: Props = $props();
+	let { playerId, onClose, onGameClick }: Props = $props();
 
 	let profile = $state<PlayerProfileResponse | null>(null);
 	let loading = $state(true);
@@ -570,7 +571,11 @@
 						<tbody>
 							{#each gameLog.games as game (game.game_id)}
 								{@const oppColors = game.opponent ? getTeamColors(game.opponent.abbreviation) : null}
-								<tr class:dnp-row={game.dnp}>
+								<tr
+									class:dnp-row={game.dnp}
+									class:clickable-row={!!onGameClick}
+									onclick={() => onGameClick?.(game.game_id, game.date)}
+								>
 									<td class="col-date">{formatGameDate(game.date)}</td>
 									<td class="col-matchup">
 										<span class="home-away">{game.is_home ? 'vs' : '@'}</span>
@@ -1181,12 +1186,30 @@
 		vertical-align: middle;
 	}
 
+	/* Clickable game log rows */
+	.clickable-row {
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+
+	.clickable-row:hover {
+		background: var(--bg-card-hover);
+	}
+
+	.clickable-row:hover td.col-date {
+		color: var(--accent-primary);
+	}
+
 	/* DNP row styles */
 	.dnp-row {
 		opacity: 0.5;
 	}
 
 	.dnp-row:hover {
+		opacity: 0.7;
+	}
+
+	.dnp-row.clickable-row:hover {
 		opacity: 0.7;
 	}
 

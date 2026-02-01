@@ -4,9 +4,10 @@
 	interface Props {
 		playerId: number | null;
 		onClose: () => void;
+		onGameClick?: (gameId: number, date: string) => void;
 	}
 
-	let { playerId, onClose }: Props = $props();
+	let { playerId, onClose, onGameClick }: Props = $props();
 
 	const isOpen = $derived(playerId !== null);
 
@@ -37,7 +38,7 @@
 		tabindex="-1"
 	>
 		<aside class="slide-panel" class:open={isOpen}>
-			<PlayerPanel {playerId} {onClose} />
+			<PlayerPanel {playerId} {onClose} {onGameClick} />
 		</aside>
 	</div>
 {/if}

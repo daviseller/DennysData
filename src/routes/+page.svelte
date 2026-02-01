@@ -49,6 +49,16 @@
 		return new Date();
 	}
 
+	// Check for ?date=YYYY-MM-DD&game=123 query params (from game log navigation)
+	function getUrlParams(): { date: string | null; gameId: number | null } {
+		if (typeof window === 'undefined') return { date: null, gameId: null };
+		const params = new URLSearchParams(window.location.search);
+		const date = params.get('date');
+		const gameIdStr = params.get('game');
+		const gameId = gameIdStr ? parseInt(gameIdStr, 10) : null;
+		return { date, gameId: isNaN(gameId as number) ? null : gameId };
+	}
+
 	const themes = [
 		{ id: 'arena', name: 'Arena', type: 'light' },
 		{ id: 'courtside', name: 'Courtside', type: 'light' },
@@ -159,6 +169,34 @@
 
 	function handleClosePlayerPanel() {
 		selectedPlayerId = null;
+	}
+
+	async function handleGameNavigate(gameId: number, dateStr: string) {
+		// Close the player panel first
+		selectedPlayerId = null;
+
+		// Parse the date (format: YYYY-MM-DD)
+		const [year, month, day] = dateStr.split('-').map(Number);
+		const targetDate = new Date(year, month - 1, day);
+
+		// Update selected date and load games for that day
+		selectedDate = targetDate;
+		loading = true;
+
+		const result = await fetchGames(dateStr);
+
+		if (result.data) {
+			const rawGames = result.data.data ?? [];
+			games = sortGames(rawGames);
+
+			// Find and select the target game
+			const targetGame = games.find(g => g.id === gameId);
+			if (targetGame) {
+				selectedGame = targetGame;
+			}
+		}
+
+		loading = false;
 	}
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
@@ -297,11 +335,24 @@
 	}
 
 	// Initialize on mount
-	onMount(() => {
-		initializeDate();
-		loadStandings();
+	onMount(async () => {
 		updateIsMobile();
 		window.addEventListener('resize', updateIsMobile);
+
+		// Check for URL params first (e.g., from game log navigation)
+		const urlParams = getUrlParams();
+		if (urlParams.date && urlParams.gameId) {
+			// Navigate directly to the specified game
+			await handleGameNavigate(urlParams.gameId, urlParams.date);
+			// Clear the URL params without triggering a navigation
+			window.history.replaceState({}, '', '/');
+			loadStandings();
+		} else {
+			// Normal initialization
+			await initializeDate();
+			loadStandings();
+		}
+
 		return () => window.removeEventListener('resize', updateIsMobile);
 	});
 
@@ -467,7 +518,7 @@
 	</div>
 </div>
 
-<PlayerSlidePanel playerId={selectedPlayerId} onClose={handleClosePlayerPanel} />
+<PlayerSlidePanel playerId={selectedPlayerId} onClose={handleClosePlayerPanel} onGameClick={handleGameNavigate} />
 
 <style>
 	.page-wrapper {

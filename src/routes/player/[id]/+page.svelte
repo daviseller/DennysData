@@ -14,6 +14,11 @@
 			goto('/');
 		}
 	}
+
+	function handleGameClick(gameId: number, dateStr: string) {
+		// Navigate to home page with date and game as query params
+		goto(`/?date=${dateStr}&game=${gameId}`);
+	}
 </script>
 
 <svelte:head>
@@ -21,7 +26,7 @@
 </svelte:head>
 
 <div class="player-page">
-	<PlayerPanel {playerId} onClose={handleClose} />
+	<PlayerPanel {playerId} onClose={handleClose} onGameClick={handleGameClick} />
 </div>
 
 <style>
