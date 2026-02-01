@@ -1223,7 +1223,6 @@
 	/* Career stats scrollable container */
 	.career-scroll {
 		max-height: calc(100vh - 320px);
-		min-height: 200px;
 		overflow-y: auto;
 	}
 
@@ -1236,7 +1235,6 @@
 	/* Game log scrollable container */
 	.gamelog-scroll {
 		max-height: calc(100vh - 320px);
-		min-height: 200px;
 		overflow-y: auto;
 	}
 
