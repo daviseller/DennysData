@@ -1,4 +1,4 @@
-import type { GamesResponse, BoxScore, StandingsMap, PlayerSeasonStatsResponse, LineupsResponse, PlayerProfileResponse, ApiResult } from './types';
+import type { GamesResponse, BoxScore, StandingsMap, PlayerSeasonStatsResponse, LineupsResponse, PlayerProfileResponse, PlayerGameLogResponse, ApiResult } from './types';
 
 /**
  * Fetch games for a specific date
@@ -208,6 +208,47 @@ export async function fetchPlayer(playerId: number, signal?: AbortSignal): Promi
 		}
 
 		const result: { data: PlayerProfileResponse } = await response.json();
+		return { data: result.data, error: null };
+	} catch (err) {
+		// Don't treat aborted requests as errors
+		if (err instanceof Error && err.name === 'AbortError') {
+			return { data: null, error: null };
+		}
+		return {
+			data: null,
+			error: {
+				message: 'Network error. Please check your connection.',
+				status: 0
+			}
+		};
+	}
+}
+
+/**
+ * Fetch player game log for a season
+ * @param playerId - The player ID
+ * @param season - Optional season year (defaults to current)
+ * @param signal - Optional AbortSignal to cancel the request
+ */
+export async function fetchPlayerGameLog(playerId: number, season?: number, signal?: AbortSignal): Promise<ApiResult<PlayerGameLogResponse>> {
+	try {
+		const url = season
+			? `/api/player/${playerId}/gamelog?season=${season}`
+			: `/api/player/${playerId}/gamelog`;
+		const response = await fetch(url, { signal });
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({}));
+			return {
+				data: null,
+				error: {
+					message: errorData.message || 'Failed to fetch game log',
+					status: response.status
+				}
+			};
+		}
+
+		const result: { data: PlayerGameLogResponse } = await response.json();
 		return { data: result.data, error: null };
 	} catch (err) {
 		// Don't treat aborted requests as errors

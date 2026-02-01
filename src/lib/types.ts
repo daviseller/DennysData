@@ -265,3 +265,38 @@ export interface PlayerProfileResponse {
 	seasons: PlayerCareerSeason[];
 	injury: PlayerInjury | null;
 }
+
+export interface GameLogEntry {
+	game_id: number;
+	date: string;
+	team: Team | null;
+	opponent: Team | null;
+	is_home: boolean | null;
+	result: 'W' | 'L' | null;
+	final_score: string | null;
+	dnp: boolean;
+	started: boolean | null;
+	min: string | null;
+	pts: number | null;
+	reb: number | null;
+	ast: number | null;
+	stl: number | null;
+	blk: number | null;
+	turnover: number | null;
+	pf: number | null;
+	fgm: number | null;
+	fga: number | null;
+	fg3m: number | null;
+	fg3a: number | null;
+	ftm: number | null;
+	fta: number | null;
+	oreb: number | null;
+	dreb: number | null;
+	plus_minus: number | null;
+}
+
+export interface PlayerGameLogResponse {
+	player_id: number;
+	season: number;
+	games: GameLogEntry[];
+}

@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { fetchPlayer } from '$lib/api';
+	import { fetchPlayer, fetchPlayerGameLog } from '$lib/api';
 	import { getTeamColors } from '$lib/team-colors';
-	import type { PlayerProfileResponse } from '$lib/types';
+	import type { PlayerProfileResponse, PlayerGameLogResponse } from '$lib/types';
 	import PlayerPanelSkeleton from './PlayerPanelSkeleton.svelte';
+
+	type TabId = 'seasons' | 'gamelog';
 
 	interface Props {
 		playerId: number;
@@ -17,6 +19,22 @@
 	let injuryExpanded = $state(false);
 	let expandedSeasons = $state<Set<number>>(new Set());
 
+	// Tab state
+	let activeTab = $state<TabId>('seasons');
+
+	// Game log state
+	let gameLog = $state<PlayerGameLogResponse | null>(null);
+	let gameLogLoading = $state(false);
+	let gameLogError = $state<string | null>(null);
+	let gameLogSeason = $state<number>(getCurrentSeason());
+
+	function getCurrentSeason(): number {
+		const now = new Date();
+		const month = now.getMonth();
+		const year = now.getFullYear();
+		return month < 9 ? year - 1 : year;
+	}
+
 	function toggleSeasonExpanded(season: number) {
 		const newSet = new Set(expandedSeasons);
 		if (newSet.has(season)) {
@@ -28,10 +46,14 @@
 	}
 
 	let abortController: AbortController | null = null;
+	let gameLogAbortController: AbortController | null = null;
 
 	$effect(() => {
 		if (playerId) {
 			injuryExpanded = false;
+			activeTab = 'seasons';
+			gameLog = null;
+			gameLogError = null;
 			loadPlayer(playerId);
 		}
 
@@ -39,7 +61,17 @@
 			if (abortController) {
 				abortController.abort();
 			}
+			if (gameLogAbortController) {
+				gameLogAbortController.abort();
+			}
 		};
+	});
+
+	// Load game log when tab is switched to gamelog
+	$effect(() => {
+		if (activeTab === 'gamelog' && playerId && !gameLog && !gameLogLoading) {
+			loadGameLog(playerId, gameLogSeason);
+		}
 	});
 
 	async function loadPlayer(id: number) {
@@ -61,6 +93,42 @@
 		}
 
 		loading = false;
+	}
+
+	async function loadGameLog(id: number, season: number) {
+		if (gameLogAbortController) {
+			gameLogAbortController.abort();
+		}
+		gameLogAbortController = new AbortController();
+
+		gameLogLoading = true;
+		gameLogError = null;
+
+		const result = await fetchPlayerGameLog(id, season, gameLogAbortController.signal);
+
+		if (result.error) {
+			gameLogError = result.error.message;
+			gameLog = null;
+		} else if (result.data) {
+			gameLog = result.data;
+		}
+
+		gameLogLoading = false;
+	}
+
+	function handleSeasonChange(event: Event) {
+		const select = event.target as HTMLSelectElement;
+		const newSeason = parseInt(select.value, 10);
+		if (!isNaN(newSeason)) {
+			gameLogSeason = newSeason;
+			gameLog = null;
+			loadGameLog(playerId, newSeason);
+		}
+	}
+
+	function formatGameDate(dateStr: string): string {
+		const date = new Date(dateStr + 'T00:00:00');
+		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	}
 
 	function formatHeight(height: string | null): string {
@@ -287,7 +355,26 @@
 			</button>
 		{/if}
 
+		<!-- Tabs -->
+		<nav class="tabs">
+			<button
+				class="tab"
+				class:active={activeTab === 'seasons'}
+				onclick={() => activeTab = 'seasons'}
+			>
+				CAREER STATS
+			</button>
+			<button
+				class="tab"
+				class:active={activeTab === 'gamelog'}
+				onclick={() => activeTab = 'gamelog'}
+			>
+				GAME LOG
+			</button>
+		</nav>
+
 		<!-- Season Stats -->
+		{#if activeTab === 'seasons'}
 		<section class="stats-section">
 			<h2 class="section-title">SEASON AVERAGES</h2>
 
@@ -412,6 +499,98 @@
 				</div>
 			{/if}
 		</section>
+		{/if}
+
+		<!-- Game Log -->
+		{#if activeTab === 'gamelog'}
+		<section class="stats-section">
+			<div class="section-header">
+				<h2 class="section-title">GAME LOG</h2>
+				<select class="season-select" value={gameLogSeason} onchange={handleSeasonChange}>
+					{#each Array.from({ length: 10 }, (_, i) => getCurrentSeason() - i) as season (season)}
+						<option value={season}>{formatSeasonLabel(season)}</option>
+					{/each}
+				</select>
+			</div>
+
+			{#if gameLogLoading}
+				<div class="loading-state">
+					<div class="spinner"></div>
+					<span>Loading game log...</span>
+				</div>
+			{:else if gameLogError}
+				<div class="error-inline">
+					<span>{gameLogError}</span>
+					<button class="retry-btn-small" onclick={() => loadGameLog(playerId, gameLogSeason)}>
+						Retry
+					</button>
+				</div>
+			{:else if gameLog && gameLog.games.length === 0}
+				<div class="no-stats">
+					<span class="no-stats-text">No games found for {formatSeasonLabel(gameLogSeason)}</span>
+				</div>
+			{:else if gameLog}
+				<div class="table-scroll gamelog-scroll">
+					<table class="stats-table gamelog-table">
+						<thead>
+							<tr>
+								<th class="col-date">DATE</th>
+								<th class="col-matchup">OPP</th>
+								<th class="col-result">RESULT</th>
+								<th class="col-stat">MIN</th>
+								<th class="col-stat">PTS</th>
+								<th class="col-stat">REB</th>
+								<th class="col-stat">AST</th>
+								<th class="col-stat">STL</th>
+								<th class="col-stat">BLK</th>
+								<th class="col-stat">FG</th>
+								<th class="col-stat">3P</th>
+								<th class="col-stat col-last">FT</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each gameLog.games as game (game.game_id)}
+								{@const oppColors = game.opponent ? getTeamColors(game.opponent.abbreviation) : null}
+								<tr class:dnp-row={game.dnp}>
+									<td class="col-date">{formatGameDate(game.date)}</td>
+									<td class="col-matchup">
+										<span class="home-away">{game.is_home ? 'vs' : '@'}</span>
+										{#if game.opponent}
+											<span class="team-pip" style="background: linear-gradient(135deg, {oppColors?.primary} 49%, {oppColors?.secondary} 51%)"></span>
+											{game.opponent.abbreviation}
+										{:else}
+											-
+										{/if}
+									</td>
+									<td class="col-result">
+										{#if game.result}
+											<span class="result result-{game.result.toLowerCase()}">{game.result}</span>
+											<span class="score">{game.final_score}</span>
+										{:else}
+											-
+										{/if}
+									</td>
+									{#if game.dnp}
+										<td class="col-stat dnp-label" colspan="9">DNP</td>
+									{:else}
+										<td class="col-stat">{game.min || '-'}</td>
+										<td class="col-stat">{game.pts ?? '-'}</td>
+										<td class="col-stat">{game.reb ?? '-'}</td>
+										<td class="col-stat">{game.ast ?? '-'}</td>
+										<td class="col-stat">{game.stl ?? '-'}</td>
+										<td class="col-stat">{game.blk ?? '-'}</td>
+										<td class="col-stat">{game.fgm ?? 0}-{game.fga ?? 0}</td>
+										<td class="col-stat">{game.fg3m ?? 0}-{game.fg3a ?? 0}</td>
+										<td class="col-stat col-last">{game.ftm ?? 0}-{game.fta ?? 0}</td>
+									{/if}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
+		</section>
+		{/if}
 	{/if}
 </div>
 
@@ -692,9 +871,121 @@
 		color: var(--text-primary);
 	}
 
+	/* Tabs */
+	.tabs {
+		display: flex;
+		background: var(--bg-inset);
+		border-bottom: 1px solid var(--border-primary);
+	}
+
+	.tab {
+		flex: 1;
+		padding: var(--space-sm) var(--space-md);
+		font-family: var(--font-stats);
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+		background: transparent;
+		border: none;
+		border-bottom: 2px solid transparent;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.tab:hover {
+		color: var(--text-secondary);
+		background: var(--bg-card-hover);
+	}
+
+	.tab.active {
+		color: var(--accent-primary);
+		border-bottom-color: var(--accent-primary);
+		background: var(--bg-card);
+	}
+
 	/* Stats Section */
 	.stats-section {
 		padding: var(--space-md);
+	}
+
+	.section-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: var(--space-md);
+	}
+
+	.section-header .section-title {
+		margin-bottom: 0;
+	}
+
+	.season-select {
+		padding: var(--space-xs) var(--space-sm);
+		font-family: var(--font-stats);
+		font-size: 12px;
+		color: var(--text-primary);
+		background: var(--bg-inset);
+		border: 1px solid var(--border-primary);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+	}
+
+	.season-select:hover {
+		border-color: var(--accent-primary);
+	}
+
+	.loading-state {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-sm);
+		padding: var(--space-2xl);
+		color: var(--text-muted);
+		font-family: var(--font-display);
+		font-size: 13px;
+	}
+
+	.spinner {
+		width: 16px;
+		height: 16px;
+		border: 2px solid var(--border-secondary);
+		border-top-color: var(--accent-primary);
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
+
+	.error-inline {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-sm);
+		padding: var(--space-md);
+		background: var(--bg-card);
+		border: 1px solid var(--stat-negative);
+		border-radius: var(--radius-sm);
+		color: var(--text-secondary);
+		font-family: var(--font-display);
+		font-size: 13px;
+	}
+
+	.retry-btn-small {
+		padding: var(--space-xs) var(--space-sm);
+		font-family: var(--font-stats);
+		font-size: 11px;
+		color: var(--text-primary);
+		background: var(--bg-inset);
+		border: 1px solid var(--border-primary);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+	}
+
+	.retry-btn-small:hover {
+		border-color: var(--accent-primary);
 	}
 
 	.section-title {
@@ -803,6 +1094,117 @@
 
 	tbody tr:last-child td {
 		border-bottom: none;
+	}
+
+	/* Game log table */
+	.gamelog-table .col-date {
+		text-align: left;
+		padding-left: var(--space-md);
+		font-weight: 500;
+		color: var(--text-primary);
+	}
+
+	.gamelog-table .col-matchup {
+		text-align: left;
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.gamelog-table th.col-date,
+	.gamelog-table th.col-matchup,
+	.gamelog-table th.col-result {
+		text-align: left;
+		padding-left: var(--space-md);
+	}
+
+	.gamelog-table td.col-result {
+		text-align: left;
+		padding-left: var(--space-md);
+	}
+
+	.home-away {
+		font-size: 10px;
+		color: var(--text-muted);
+		width: 16px;
+		flex-shrink: 0;
+	}
+
+	.result {
+		font-weight: 600;
+		margin-right: 4px;
+	}
+
+	.result-w {
+		color: var(--stat-positive);
+	}
+
+	.result-l {
+		color: var(--stat-negative);
+	}
+
+	.score {
+		font-variant-numeric: tabular-nums;
+		color: var(--text-muted);
+		font-size: 11px;
+	}
+
+	/* Starter badge - matches StatsTable */
+	.starter-badge {
+		margin-left: var(--space-xs);
+		padding: 1px 4px;
+		font-size: 9px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		color: var(--text-muted);
+		background: var(--bg-inset);
+		border-radius: 2px;
+		vertical-align: middle;
+	}
+
+	/* DNP row styles */
+	.dnp-row {
+		opacity: 0.5;
+	}
+
+	.dnp-row:hover {
+		opacity: 0.7;
+	}
+
+	.dnp-label {
+		text-align: center !important;
+		font-style: italic;
+		color: var(--text-muted);
+		letter-spacing: 0.05em;
+	}
+
+	/* Game log scrollable container */
+	.gamelog-scroll {
+		max-height: 450px;
+		overflow-y: auto;
+	}
+
+	.gamelog-scroll thead {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+	}
+
+	/* Game log column widths - ensure proper sizing */
+	.gamelog-table .col-date {
+		min-width: 75px;
+		max-width: 85px;
+		white-space: nowrap;
+	}
+
+	.gamelog-table .col-matchup {
+		min-width: 65px;
+		max-width: 75px;
+	}
+
+	.gamelog-table .col-result {
+		min-width: 70px;
+		max-width: 85px;
 	}
 
 	/* Multi-team season styles */
