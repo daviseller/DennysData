@@ -31,3 +31,6 @@ logs/
 
 # Claude recovery files
 .claude/.recovery/
+
+# Windows reserved names
+nul
