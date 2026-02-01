@@ -28,3 +28,6 @@ bun.lockb
 # Logs
 logs/
 *.log
+
+# Claude recovery files
+.claude/.recovery/

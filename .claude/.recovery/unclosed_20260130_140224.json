@@ -1,7 +1,0 @@
-{
-  "timestamp": "2026-01-30T14:02:24.236449",
-  "event": "session_end_without_close",
-  "session_info": "**Session:** #2",
-  "active_md_snapshot": "# Currently Active\n\n**Plan:** app-setup\n**Session:** #2\n**Started:** 2026-01-30\n**Mode:** Developer\n\n## This Session\n\n**Objective:** Build the API integration layer to fetch NBA game data from balldontlie.io via secure server routes.\n\n### Tasks\n- [x] Create TypeScript types for API data\n- [x] Build server route: `/api/games`\n- [x] Build server route: `/api/boxscore/[id]`\n- [x] Create client fetch helper\n- [x] Add NBA team colors\n\n## Session Notes\n- Phase 2: API Integration\n- All 5 tasks completed\n- Build verified successful\n\n\n## Session Status\n\n- 2026-01-30T13:55:55.398971: Session ended without proper close (recovery saved)\n- 2026-01-30T13:56:52.087379: Session ended without proper close (recovery saved)\n- 2026-01-30T14:00:35.352482: Session ended without proper close (recovery saved)\n- 2026-01-30T14:01:54.219263: Session ended without proper close (recovery saved)",
-  "warning": "Session ended without /workflow:session-end. Run /workflow:health on next session."
-}
