@@ -3,7 +3,7 @@
 ## Overview
 
 **Goal:** NBA box scores website - browse games by date, view detailed stats
-**Status:** In Progress (70%)
+**Status:** Complete (100%)
 **Created:** 2026-01-30
 
 ## Tech Stack
@@ -55,24 +55,18 @@ See [design-system.md](design-system.md) for full details.
 - [x] Game detail page route `/game/[id]`
 - [x] Request cancellation for rapid navigation
 
-### Phase 5: Caching & Polish (In Progress)
+### Phase 5: Caching & Polish ✓
 - [x] Supabase integration
 - [x] Cache historical games
 - [x] Cache box scores
-- [ ] Skeleton loading states
-- [ ] Better error messages
-- [ ] Keyboard navigation
+- [x] Skeleton loading states (player panel, game log)
+- [x] Player panel with career stats + game log
+- [x] Click game log → navigate to box score
 
-### Phase 6: Data Viz (Future)
-- [ ] Layercake setup
-- [ ] Scoring charts
-- [ ] Shot charts
-- [ ] Player comparisons
+*Remaining polish items moved to backlog*
 
-### Phase 7: Production
-- [ ] SEO/meta tags
-- [ ] Performance tuning
-- [ ] Final deploy
+### Phase 6: Data Viz → Spun off to `data-viz` plan
+### Phase 7: Production → Spun off to `production` plan
 
 ## Routes
 
@@ -96,8 +90,8 @@ box_scores_cache (game_id INT PK, data JSONB, cached_at TIMESTAMPTZ)
 - [x] View player/team stats for any game
 - [x] Mobile-responsive
 - [x] Caching for faster loads
-- [ ] Deployed to Vercel (needs redeploy)
-- [ ] < 2s load times
+- [x] Deployed to Vercel
+- [ ] < 2s load times → moved to `production` plan
 
 ## Links
 

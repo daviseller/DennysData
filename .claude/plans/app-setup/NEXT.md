@@ -4,8 +4,9 @@
 
 ### Completed Recently
 - [x] Player game log tab with per-game stats
-- [x] DNP game display
-- [x] Season selector for game log
+- [x] Skeleton loader for game log tab
+- [x] Responsive scroll heights for both tables
+- [x] Career stats now show full history from draft year
 
 ### Carry-Forward Tasks
 
@@ -13,7 +14,7 @@
 - [ ] Better error messages with retry options
 - [ ] Keyboard navigation for day picker (arrow keys)
 
-### New Ideas from Session 8
+### Ideas from Sessions 8-9
 - [ ] Click game in game log to navigate to that box score
 - [ ] Summary stats at top of game log (season averages)
 - [ ] Career totals row in season stats
@@ -43,6 +44,6 @@
 
 ### Context
 
-- Supabase caching is working (games_cache, box_scores_cache, player_game_log)
-- Player game log caches as users browse player profiles
-- Project ID: `rwzhinwyohngxvatahvg`
+- Player cache was cleared; first load fetches full history from draft year
+- API has basic data back to 1946, detailed stats from 1996+
+- Supabase project: `rwzhinwyohngxvatahvg`

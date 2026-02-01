@@ -1,18 +1,21 @@
 # Workflow Index - DennysData
 
-**Last Updated:** 2026-01-30
+**Last Updated:** 2026-01-31
 
 ## Plans
 
 | Plan | Status | Progress | Last Worked | Description |
 |------|--------|----------|-------------|-------------|
-| [app-setup](plans/app-setup/PLAN.md) | In Progress | 70% | 2026-01-30 | NBA box scores site - Bun + SvelteKit + Vercel |
+| [app-setup](plans/app-setup/PLAN.md) | Complete | 100% | 2026-01-31 | NBA box scores site - Bun + SvelteKit + Vercel |
+| [stats-page](plans/stats-page/PLAN.md) | Planned | 0% | - | Player Stats page with search, sort, season picker |
+| [data-viz](plans/data-viz/PLAN.md) | Planned | 0% | - | Layercake charts, scoring viz, shot charts |
+| [production](plans/production/PLAN.md) | Planned | 0% | - | SEO, performance tuning, final deploy |
 
 ## Quick Reference
 
-- **Active Plan:** app-setup
-- **Total Plans:** 1
-- **Completed:** 0
+- **Active Plan:** None (app-setup complete)
+- **Total Plans:** 4
+- **Completed:** 1
 
 ## Commands
 

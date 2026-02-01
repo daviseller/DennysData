@@ -7,6 +7,7 @@
 	import GamesList from '$lib/components/GamesList.svelte';
 	import BoxScorePanel from '$lib/components/BoxScorePanel.svelte';
 	import PlayerSlidePanel from '$lib/components/PlayerSlidePanel.svelte';
+	import AppNav from '$lib/components/AppNav.svelte';
 
 	function getStoredTheme(): string {
 		if (typeof document === 'undefined') return 'arena';
@@ -426,7 +427,7 @@
 		<span class="header-divider">·</span>
 		<span class="header-subtitle">NBA</span>
 		<span class="header-divider">·</span>
-		<span class="header-subtitle">Box Scores</span>
+		<AppNav />
 		<div class="header-spacer"></div>
 		<div class="theme-dropdown">
 			<button class="theme-trigger" onclick={toggleThemeDropdown}>
