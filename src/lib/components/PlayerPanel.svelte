@@ -1199,7 +1199,8 @@
 
 	/* Game log scrollable container */
 	.gamelog-scroll {
-		max-height: 450px;
+		max-height: calc(100vh - 320px);
+		min-height: 200px;
 		overflow-y: auto;
 	}
 
