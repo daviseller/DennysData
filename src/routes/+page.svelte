@@ -636,8 +636,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
-		padding-bottom: var(--space-lg);
-		margin-bottom: var(--space-md);
+		margin-bottom: var(--space-sm);
 	}
 
 	.header-title {
