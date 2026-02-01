@@ -12,8 +12,9 @@ function getPlayerSeasonRange(draftYear: number | null): number[] {
 	// NBA season starts in October, so if we're before October, current season is last year
 	const currentSeason = currentMonth < 9 ? currentYear - 1 : currentYear;
 
-	// If no draft year, assume they could have stats from 2015 onwards (API limitation)
-	const startYear = draftYear ? Math.max(draftYear, 2015) : 2015;
+	// Use draft year if available, otherwise default to 1996 (when detailed stats began)
+	// API has basic data back to 1946, but most useful stats start around 1996
+	const startYear = draftYear || 1996;
 
 	const seasons: number[] = [];
 	for (let year = startYear; year <= currentSeason; year++) {

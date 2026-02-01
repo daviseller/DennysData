@@ -383,7 +383,7 @@
 					<span class="no-stats-text">No season stats available</span>
 				</div>
 			{:else}
-				<div class="table-scroll">
+				<div class="table-scroll career-scroll">
 					<table class="stats-table">
 						<thead>
 							<tr>
@@ -1195,6 +1195,19 @@
 		font-style: italic;
 		color: var(--text-muted);
 		letter-spacing: 0.05em;
+	}
+
+	/* Career stats scrollable container */
+	.career-scroll {
+		max-height: calc(100vh - 320px);
+		min-height: 200px;
+		overflow-y: auto;
+	}
+
+	.career-scroll thead {
+		position: sticky;
+		top: 0;
+		z-index: 2;
 	}
 
 	/* Game log scrollable container */
